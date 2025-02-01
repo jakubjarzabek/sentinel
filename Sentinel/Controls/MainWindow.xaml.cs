@@ -21,6 +21,8 @@ using Sentinel.Log4Net;
 using Sentinel.Logs.Interfaces;
 using Sentinel.NLog;
 using Sentinel.Providers.Interfaces;
+using Sentinel.Providers.Log4Net;
+using Sentinel.Providers.NLog;
 using Sentinel.Services;
 using Sentinel.Services.Interfaces;
 using Sentinel.StartUp;

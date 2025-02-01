@@ -11,6 +11,24 @@
   <ItemGroup>
     <Page Remove="MainApplication.xaml" />
     <ApplicationDefinition Include="MainApplication.xaml" />
+    <Page Update="Providers\MSBuild\ConfigurationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Providers\NLog\NetworkConfigurationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Providers\FileMonitor\CustomMessageDecoderPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Providers\FileMonitor\FileMonitorProviderPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Providers\FileMonitor\MessageFormatPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Providers\Log4Net\ConfigurationPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>

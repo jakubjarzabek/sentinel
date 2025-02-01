@@ -1,4 +1,9 @@
-﻿namespace Sentinel.Providers;
+﻿using Sentinel.Providers.FileMonitor;
+using Sentinel.Providers.Log4Net;
+using Sentinel.Providers.MSBuild;
+using Sentinel.Providers.NLog;
+
+namespace Sentinel.Providers;
 
 using System;
 using System.Collections;
