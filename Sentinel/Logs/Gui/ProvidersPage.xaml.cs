@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using log4net;
 using Sentinel.Interfaces.Providers;
-using Sentinel.NLog;
 using Sentinel.Providers.Interfaces;
 using Sentinel.Providers.NLog;
 using Sentinel.Services;

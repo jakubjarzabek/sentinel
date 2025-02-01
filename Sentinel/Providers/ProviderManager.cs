@@ -1,23 +1,14 @@
-﻿using Sentinel.Providers.FileMonitor;
+﻿using System.Collections;
+using System.Diagnostics;
+using Sentinel.Providers.FileMonitor;
+using Sentinel.Interfaces.Providers;
+using Sentinel.Providers.DbMonitor;
 using Sentinel.Providers.Log4Net;
 using Sentinel.Providers.MSBuild;
 using Sentinel.Providers.NLog;
+using Sentinel.Providers.Interfaces;
 
 namespace Sentinel.Providers;
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-
-using Sentinel.FileMonitor;
-using Sentinel.Interfaces.CodeContracts;
-using Sentinel.Interfaces.Providers;
-using Sentinel.Log4Net;
-using Sentinel.MSBuild;
-using Sentinel.NLog;
-using Sentinel.Providers.Interfaces;
 
 public class ProviderManager : IProviderManager
 {
@@ -27,6 +18,7 @@ public class ProviderManager : IProviderManager
         Log4NetProvider.ProviderRegistrationInformation,
         FileMonitoringProvider.ProviderRegistrationInformation,
         MsBuildProvider.ProviderRegistrationRecord,
+        DbMonitoringProvider.ProviderRegistrationInformation,
     };
 
     private readonly List<KeyValuePair<string, ILogProvider>> providerInstances = [];
