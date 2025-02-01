@@ -1,7 +1,6 @@
-﻿namespace Sentinel.Extractors.Interfaces
+﻿namespace Sentinel.Extractors.Interfaces;
+
+public interface IEditExtractorService
 {
-    public interface IEditExtractorService
-    {
-        void Edit(IExtractor extractor);
-    }
+    void Edit(IExtractor extractor);
 }

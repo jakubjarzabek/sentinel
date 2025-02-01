@@ -1,9 +1,8 @@
-namespace Sentinel.Log4Net
-{
-    using Sentinel.Interfaces.Providers;
+namespace Sentinel.Log4Net;
 
-    public interface IUdpAppenderListenerSettings : IProviderSettings
-    {
-        int Port { get; set; }
-    }
+using Sentinel.Interfaces.Providers;
+
+public interface IUdpAppenderListenerSettings : IProviderSettings
+{
+    int Port { get; set; }
 }

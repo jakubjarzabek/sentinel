@@ -1,27 +1,26 @@
-﻿namespace Sentinel.Extractors.Gui
+﻿namespace Sentinel.Extractors.Gui;
+
+using System.Windows.Controls;
+
+using Sentinel.Extractors.Interfaces;
+using Sentinel.Services;
+
+/// <summary>
+/// Interaction logic for ExtractorsControl.xaml.
+/// </summary>
+public partial class ExtractorsControl : UserControl
 {
-    using System.Windows.Controls;
-
-    using Sentinel.Extractors.Interfaces;
-    using Sentinel.Services;
-
-    /// <summary>
-    /// Interaction logic for ExtractorsControl.xaml.
-    /// </summary>
-    public partial class ExtractorsControl : UserControl
+    public ExtractorsControl()
     {
-        public ExtractorsControl()
+        InitializeComponent();
+        var service = ServiceLocator.Instance.Get<IExtractingService<IExtractor>>();
+        if (service != null)
         {
-            InitializeComponent();
-            var service = ServiceLocator.Instance.Get<IExtractingService<IExtractor>>();
-            if (service != null)
-            {
-                Extractors = service;
-            }
-
-            DataContext = this;
+            Extractors = service;
         }
 
-        public IExtractingService<IExtractor> Extractors { get; private set; }
+        DataContext = this;
     }
+
+    public IExtractingService<IExtractor> Extractors { get; private set; }
 }

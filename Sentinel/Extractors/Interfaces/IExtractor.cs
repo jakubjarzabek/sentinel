@@ -1,32 +1,31 @@
-﻿namespace Sentinel.Extractors.Interfaces
+﻿namespace Sentinel.Extractors.Interfaces;
+
+using System.Runtime.Serialization;
+
+using Sentinel.Interfaces;
+
+public interface IExtractor
 {
-    using System.Runtime.Serialization;
+    [DataMember]
+    string Name { get; set; }
 
-    using Sentinel.Interfaces;
+    /// <summary>
+    /// Gets or sets a value indicating whether the filter is enabled.
+    /// </summary>
+    [DataMember]
+    bool Enabled { get; set; }
 
-    public interface IExtractor
-    {
-        [DataMember]
-        string Name { get; set; }
+    [DataMember]
+    string Pattern { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether the filter is enabled.
-        /// </summary>
-        [DataMember]
-        bool Enabled { get; set; }
+    [DataMember]
+    string Description { get; }
 
-        [DataMember]
-        string Pattern { get; set; }
+    [DataMember]
+    LogEntryFields Field { get; set; }
 
-        [DataMember]
-        string Description { get; }
+    [DataMember]
+    MatchMode Mode { get; set; }
 
-        [DataMember]
-        LogEntryFields Field { get; set; }
-
-        [DataMember]
-        MatchMode Mode { get; set; }
-
-        bool IsMatch(ILogEntry entry);
-    }
+    bool IsMatch(ILogEntry entry);
 }

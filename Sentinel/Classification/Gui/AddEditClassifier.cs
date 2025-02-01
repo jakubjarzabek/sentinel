@@ -1,138 +1,137 @@
-﻿namespace Sentinel.Classification.Gui
+﻿namespace Sentinel.Classification.Gui;
+
+using System.Windows;
+using System.Windows.Input;
+
+using Sentinel.Interfaces;
+
+using WpfExtras;
+
+public class AddEditClassifier : ViewModelBase
 {
-    using System.Windows;
-    using System.Windows.Input;
+    private readonly Window window;
 
-    using Sentinel.Interfaces;
+    private string name = "Unnamed";
 
-    using WpfExtras;
+    private string pattern = "pattern";
 
-    public class AddEditClassifier : ViewModelBase
+    private LogEntryFields field;
+
+    private MatchMode mode;
+
+    private string type;
+
+    public AddEditClassifier(Window window, bool editMode)
     {
-        private readonly Window window;
-
-        private string name = "Unnamed";
-
-        private string pattern = "pattern";
-
-        private LogEntryFields field;
-
-        private MatchMode mode;
-
-        private string type;
-
-        public AddEditClassifier(Window window, bool editMode)
+        this.window = window;
+        if (window != null)
         {
-            this.window = window;
-            if (window != null)
-            {
-                window.Title = $"{(editMode ? "Edit" : "Register")} Classifier";
-            }
-
-            Accept = new DelegateCommand(AcceptDialog, Validates);
-            Reject = new DelegateCommand(RejectDialog);
+            window.Title = $"{(editMode ? "Edit" : "Register")} Classifier";
         }
 
-        // ReSharper disable once MemberCanBePrivate.Global
-        public ICommand Accept { get; private set; }
+        Accept = new DelegateCommand(AcceptDialog, Validates);
+        Reject = new DelegateCommand(RejectDialog);
+    }
 
-        public LogEntryFields Field
+    // ReSharper disable once MemberCanBePrivate.Global
+    public ICommand Accept { get; private set; }
+
+    public LogEntryFields Field
+    {
+        get
         {
-            get
-            {
-                return field;
-            }
-
-            set
-            {
-                field = value;
-                OnPropertyChanged(nameof(Field));
-            }
+            return field;
         }
 
-        public MatchMode Mode
+        set
         {
-            get
-            {
-                return mode;
-            }
+            field = value;
+            OnPropertyChanged(nameof(Field));
+        }
+    }
 
-            set
-            {
-                mode = value;
-                OnPropertyChanged(nameof(Mode));
-            }
+    public MatchMode Mode
+    {
+        get
+        {
+            return mode;
         }
 
-        public string Name
+        set
         {
-            get
-            {
-                return name;
-            }
+            mode = value;
+            OnPropertyChanged(nameof(Mode));
+        }
+    }
 
-            set
-            {
-                if (name != value)
-                {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
-                }
-            }
+    public string Name
+    {
+        get
+        {
+            return name;
         }
 
-        public string Pattern
+        set
         {
-            get
+            if (name != value)
             {
-                return pattern;
-            }
-
-            set
-            {
-                if (value != pattern)
-                {
-                    pattern = value;
-                    OnPropertyChanged(nameof(Pattern));
-                }
+                name = value;
+                OnPropertyChanged(nameof(Name));
             }
         }
+    }
 
-        public string Type
+    public string Pattern
+    {
+        get
         {
-            get
+            return pattern;
+        }
+
+        set
+        {
+            if (value != pattern)
             {
-                return type;
+                pattern = value;
+                OnPropertyChanged(nameof(Pattern));
             }
+        }
+    }
 
-            set
+    public string Type
+    {
+        get
+        {
+            return type;
+        }
+
+        set
+        {
+            if (value != type)
             {
-                if (value != type)
-                {
-                    type = value;
-                    OnPropertyChanged(nameof(Type));
-                }
+                type = value;
+                OnPropertyChanged(nameof(Type));
             }
         }
+    }
 
-        // ReSharper disable once MemberCanBePrivate.Global
-        public ICommand Reject { get; private set; }
+    // ReSharper disable once MemberCanBePrivate.Global
+    public ICommand Reject { get; private set; }
 
-        private void AcceptDialog(object obj)
-        {
-            window.DialogResult = true;
-            window.Close();
-        }
+    private void AcceptDialog(object obj)
+    {
+        window.DialogResult = true;
+        window.Close();
+    }
 
-        private void RejectDialog(object obj)
-        {
-            window.DialogResult = false;
-            window.Close();
-        }
+    private void RejectDialog(object obj)
+    {
+        window.DialogResult = false;
+        window.Close();
+    }
 
-        private bool Validates(object obj)
-        {
-            return Name.Length > 0 && Pattern.Length > 0;
-        }
+    private bool Validates(object obj)
+    {
+        return Name.Length > 0 && Pattern.Length > 0;
     }
 }

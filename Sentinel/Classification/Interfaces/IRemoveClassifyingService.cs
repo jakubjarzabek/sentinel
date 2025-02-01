@@ -1,7 +1,6 @@
-namespace Sentinel.Classification.Interfaces
+namespace Sentinel.Classification.Interfaces;
+
+public interface IRemoveClassifyingService
 {
-    public interface IRemoveClassifyingService
-    {
-        void Remove(IClassifier classifier);
-    }
+    void Remove(IClassifier classifier);
 }

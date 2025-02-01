@@ -1,6 +1,5 @@
-﻿namespace Sentinel.Extractors.Interfaces
+﻿namespace Sentinel.Extractors.Interfaces;
+
+public interface ISearchExtractor : IExtractor
 {
-    public interface ISearchExtractor : IExtractor
-    {
-    }
 }

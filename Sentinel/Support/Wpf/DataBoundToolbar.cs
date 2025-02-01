@@ -1,19 +1,18 @@
-﻿namespace Sentinel.Support.Wpf
+﻿namespace Sentinel.Support.Wpf;
+
+using System.Windows.Controls;
+using System.Windows.Threading;
+
+public class DataBoundToolbar : ToolBar
 {
-    using System.Windows.Controls;
-    using System.Windows.Threading;
+    private delegate void InvalidateMeasurementDelegate();
 
-    public class DataBoundToolbar : ToolBar
+    public override void OnApplyTemplate()
     {
-        private delegate void InvalidateMeasurementDelegate();
-
-        public override void OnApplyTemplate()
-        {
-            Dispatcher.BeginInvoke(
-                new InvalidateMeasurementDelegate(InvalidateMeasure),
-                DispatcherPriority.Background,
-                null);
-            base.OnApplyTemplate();
-        }
+        Dispatcher.BeginInvoke(
+            new InvalidateMeasurementDelegate(InvalidateMeasure),
+            DispatcherPriority.Background,
+            null);
+        base.OnApplyTemplate();
     }
 }

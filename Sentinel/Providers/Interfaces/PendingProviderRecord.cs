@@ -1,11 +1,10 @@
-﻿namespace Sentinel.Providers.Interfaces
+﻿namespace Sentinel.Providers.Interfaces;
+
+using Sentinel.Interfaces.Providers;
+
+public class PendingProviderRecord
 {
-    using Sentinel.Interfaces.Providers;
+    public IProviderInfo Info { get; set; }
 
-    public class PendingProviderRecord
-    {
-        public IProviderInfo Info { get; set; }
-
-        public IProviderSettings Settings { get; set; }
-    }
+    public IProviderSettings Settings { get; set; }
 }

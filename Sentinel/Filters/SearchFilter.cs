@@ -1,18 +1,17 @@
-﻿namespace Sentinel.Filters
+﻿namespace Sentinel.Filters;
+
+using System.Runtime.Serialization;
+
+using Sentinel.Filters.Interfaces;
+using Sentinel.Interfaces;
+
+[DataContract]
+public class SearchFilter : Filter, IDefaultInitialisation, ISearchFilter
 {
-    using System.Runtime.Serialization;
-
-    using Sentinel.Filters.Interfaces;
-    using Sentinel.Interfaces;
-
-    [DataContract]
-    public class SearchFilter : Filter, IDefaultInitialisation, ISearchFilter
+    public void Initialise()
     {
-        public void Initialise()
-        {
-            Name = "SearchFilter";
-            Field = LogEntryFields.System;
-            Pattern = string.Empty;
-        }
+        Name = "SearchFilter";
+        Field = LogEntryFields.System;
+        Pattern = string.Empty;
     }
 }

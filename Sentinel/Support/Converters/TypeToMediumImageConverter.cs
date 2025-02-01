@@ -1,12 +1,11 @@
-namespace Sentinel.Support.Converters
-{
-    using Sentinel.Images;
+namespace Sentinel.Support.Converters;
 
-    public class TypeToMediumImageConverter : TypeToImageConverter
+using Sentinel.Images;
+
+public class TypeToMediumImageConverter : TypeToImageConverter
+{
+    public TypeToMediumImageConverter()
     {
-        public TypeToMediumImageConverter()
-        {
-            Quality = ImageQuality.Medium;
-        }
+        Quality = ImageQuality.Medium;
     }
 }

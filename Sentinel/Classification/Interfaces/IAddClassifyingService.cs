@@ -1,7 +1,6 @@
-namespace Sentinel.Classification.Interfaces
+namespace Sentinel.Classification.Interfaces;
+
+public interface IAddClassifyingService
 {
-    public interface IAddClassifyingService
-    {
-        void Add();
-    }
+    void Add();
 }

@@ -1,32 +1,31 @@
-namespace Sentinel.Highlighters.Interfaces
+namespace Sentinel.Highlighters.Interfaces;
+
+using System.Runtime.Serialization;
+
+using Sentinel.Interfaces;
+
+public interface IHighlighter
 {
-    using System.Runtime.Serialization;
+    [DataMember]
+    string Name { get; set; }
 
-    using Sentinel.Interfaces;
+    [DataMember]
+    bool Enabled { get; set; }
 
-    public interface IHighlighter
-    {
-        [DataMember]
-        string Name { get; set; }
+    [DataMember]
+    LogEntryFields Field { get; set; }
 
-        [DataMember]
-        bool Enabled { get; set; }
+    [DataMember]
+    MatchMode Mode { get; set; }
 
-        [DataMember]
-        LogEntryFields Field { get; set; }
+    [DataMember]
+    string Pattern { get; set; }
 
-        [DataMember]
-        MatchMode Mode { get; set; }
+    [DataMember]
+    string Description { get; }
 
-        [DataMember]
-        string Pattern { get; set; }
+    [DataMember]
+    IHighlighterStyle Style { get; set; }
 
-        [DataMember]
-        string Description { get; }
-
-        [DataMember]
-        IHighlighterStyle Style { get; set; }
-
-        bool IsMatch(ILogEntry logEntry);
-    }
+    bool IsMatch(ILogEntry logEntry);
 }

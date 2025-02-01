@@ -1,7 +1,6 @@
-namespace Sentinel.Classification.Interfaces
+namespace Sentinel.Classification.Interfaces;
+
+public interface IEditClassifyingService
 {
-    public interface IEditClassifyingService
-    {
-        void Edit(IClassifier classifier);
-    }
+    void Edit(IClassifier classifier);
 }

@@ -1,15 +1,14 @@
-﻿namespace Sentinel.Providers.Interfaces
+﻿namespace Sentinel.Providers.Interfaces;
+
+using System.Windows;
+
+using Sentinel.Interfaces.Providers;
+
+public interface INewProviderWizard
 {
-    using System.Windows;
+    IProviderInfo Provider { get; }
 
-    using Sentinel.Interfaces.Providers;
+    IProviderSettings Settings { get; }
 
-    public interface INewProviderWizard
-    {
-        IProviderInfo Provider { get; }
-
-        IProviderSettings Settings { get; }
-
-        bool Display(Window parent);
-    }
+    bool Display(Window parent);
 }

@@ -1,98 +1,97 @@
-﻿namespace Sentinel.WpfExtras
+﻿namespace Sentinel.WpfExtras;
+
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Linq;
+
+public class PageNavigationTreeEntry : INotifyPropertyChanged
 {
-    using System.Collections.ObjectModel;
-    using System.Collections.Specialized;
-    using System.ComponentModel;
-    using System.Linq;
+    private readonly ObservableCollection<PageNavigationTreeEntry> children;
 
-    public class PageNavigationTreeEntry : INotifyPropertyChanged
+    private bool isCurrent;
+
+    public PageNavigationTreeEntry(IWizardPage page)
     {
-        private readonly ObservableCollection<PageNavigationTreeEntry> children;
+        Page = page;
 
-        private bool isCurrent;
+        children = new ObservableCollection<PageNavigationTreeEntry>();
+        Children = new ReadOnlyObservableCollection<PageNavigationTreeEntry>(children);
 
-        public PageNavigationTreeEntry(IWizardPage page)
+        page.PropertyChanged += PagePropertyChanged;
+        (page.Children as INotifyCollectionChanged).CollectionChanged += PageChildCollectionChanged;
+
+        foreach (var c in page.Children)
         {
-            Page = page;
+            children.Add(new PageNavigationTreeEntry(c));
+        }
+    }
 
-            children = new ObservableCollection<PageNavigationTreeEntry>();
-            Children = new ReadOnlyObservableCollection<PageNavigationTreeEntry>(children);
+    public event PropertyChangedEventHandler PropertyChanged;
 
-            page.PropertyChanged += PagePropertyChanged;
-            (page.Children as INotifyCollectionChanged).CollectionChanged += PageChildCollectionChanged;
+    public ReadOnlyObservableCollection<PageNavigationTreeEntry> Children { get; private set; }
 
-            foreach (var c in page.Children)
+    public bool IsCurrent
+    {
+        get => isCurrent;
+
+        private set
+        {
+            if (isCurrent != value)
             {
-                children.Add(new PageNavigationTreeEntry(c));
+                isCurrent = value;
+                OnPropertyChanged(nameof(IsCurrent));
             }
         }
+    }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+    public IWizardPage Page { get; private set; }
 
-        public ReadOnlyObservableCollection<PageNavigationTreeEntry> Children { get; private set; }
-
-        public bool IsCurrent
+    public void SetCurrentPage(IWizardPage wizardPage)
+    {
+        IsCurrent = wizardPage == Page;
+        foreach (var child in children)
         {
-            get => isCurrent;
+            child.SetCurrentPage(wizardPage);
+        }
+    }
 
-            private set
-            {
-                if (isCurrent != value)
+    private void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        if (handler != null)
+        {
+            PropertyChangedEventArgs e = new PropertyChangedEventArgs(propertyName);
+            handler(this, e);
+        }
+    }
+
+    private void PageChildCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                foreach (var newItem in e.NewItems)
                 {
-                    isCurrent = value;
-                    OnPropertyChanged(nameof(IsCurrent));
+                    children.Add(new PageNavigationTreeEntry(newItem as IWizardPage));
                 }
-            }
+
+                break;
+            case NotifyCollectionChangedAction.Remove:
+                var itemsToRemove = Children.Join(e.OldItems.OfType<IWizardPage>(), n => n.Page, p => p, (n, p) => n).ToList();
+                foreach (var c in itemsToRemove)
+                {
+                    children.Remove(c);
+                }
+
+                break;
+            case NotifyCollectionChangedAction.Reset:
+                children.Clear();
+                break;
         }
+    }
 
-        public IWizardPage Page { get; private set; }
-
-        public void SetCurrentPage(IWizardPage wizardPage)
-        {
-            IsCurrent = wizardPage == Page;
-            foreach (var child in children)
-            {
-                child.SetCurrentPage(wizardPage);
-            }
-        }
-
-        private void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                PropertyChangedEventArgs e = new PropertyChangedEventArgs(propertyName);
-                handler(this, e);
-            }
-        }
-
-        private void PageChildCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    foreach (var newItem in e.NewItems)
-                    {
-                        children.Add(new PageNavigationTreeEntry(newItem as IWizardPage));
-                    }
-
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    var itemsToRemove = Children.Join(e.OldItems.OfType<IWizardPage>(), n => n.Page, p => p, (n, p) => n).ToList();
-                    foreach (var c in itemsToRemove)
-                    {
-                        children.Remove(c);
-                    }
-
-                    break;
-                case NotifyCollectionChangedAction.Reset:
-                    children.Clear();
-                    break;
-            }
-        }
-
-        private void PagePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-        }
+    private void PagePropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
     }
 }

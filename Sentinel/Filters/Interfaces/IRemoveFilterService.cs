@@ -1,7 +1,6 @@
-namespace Sentinel.Filters.Interfaces
+namespace Sentinel.Filters.Interfaces;
+
+public interface IRemoveFilterService
 {
-    public interface IRemoveFilterService
-    {
-        void Remove(IFilter filter);
-    }
+    void Remove(IFilter filter);
 }

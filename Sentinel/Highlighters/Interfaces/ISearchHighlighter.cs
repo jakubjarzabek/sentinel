@@ -1,21 +1,20 @@
-namespace Sentinel.Highlighters.Interfaces
+namespace Sentinel.Highlighters.Interfaces;
+
+using System.Collections.Generic;
+
+using Sentinel.Interfaces;
+
+public interface ISearchHighlighter
 {
-    using System.Collections.Generic;
+    IEnumerable<LogEntryFields> Fields { get; }
 
-    using Sentinel.Interfaces;
+    LogEntryFields Field { get; set; }
 
-    public interface ISearchHighlighter
-    {
-        IEnumerable<LogEntryFields> Fields { get; }
+    bool Enabled { get; set; }
 
-        LogEntryFields Field { get; set; }
+    MatchMode Mode { get; set; }
 
-        bool Enabled { get; set; }
+    IHighlighter Highlighter { get; }
 
-        MatchMode Mode { get; set; }
-
-        IHighlighter Highlighter { get; }
-
-        string Search { get; set; }
-    }
+    string Search { get; set; }
 }

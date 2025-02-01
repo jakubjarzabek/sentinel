@@ -1,15 +1,14 @@
-﻿namespace Sentinel.Highlighters.Gui
-{
-    using System.Windows;
+﻿namespace Sentinel.Highlighters.Gui;
 
-    /// <summary>
-    /// Interaction logic for AddEditHighlighterWindow.xaml.
-    /// </summary>
-    public partial class AddEditHighlighterWindow : Window
+using System.Windows;
+
+/// <summary>
+/// Interaction logic for AddEditHighlighterWindow.xaml.
+/// </summary>
+public partial class AddEditHighlighterWindow : Window
+{
+    public AddEditHighlighterWindow()
     {
-        public AddEditHighlighterWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

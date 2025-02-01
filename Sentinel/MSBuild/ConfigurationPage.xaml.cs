@@ -1,122 +1,121 @@
-﻿namespace Sentinel.MSBuild
+﻿namespace Sentinel.MSBuild;
+
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Windows.Controls;
+
+using Sentinel.Interfaces.Providers;
+
+using WpfExtras;
+
+/// <summary>
+/// Interaction logic for ConfigurationPage.xaml.
+/// </summary>
+public partial class ConfigurationPage : IWizardPage
 {
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Windows.Controls;
+    private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
-    using Sentinel.Interfaces.Providers;
+    private bool isValid;
 
-    using WpfExtras;
+    private int port;
 
-    /// <summary>
-    /// Interaction logic for ConfigurationPage.xaml.
-    /// </summary>
-    public partial class ConfigurationPage : IWizardPage
+    public ConfigurationPage()
     {
-        private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
+        InitializeComponent();
+        DataContext = this;
 
-        private bool isValid;
+        Children = new ReadOnlyObservableCollection<IWizardPage>(children);
 
-        private int port;
+        // Register to self so that we can handler user interactions.
+        PropertyChanged += SelectProviderPagePropertyChanged;
 
-        public ConfigurationPage()
+        Port = 9998;
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public int Port
+    {
+        get
         {
-            InitializeComponent();
-            DataContext = this;
-
-            Children = new ReadOnlyObservableCollection<IWizardPage>(children);
-
-            // Register to self so that we can handler user interactions.
-            PropertyChanged += SelectProviderPagePropertyChanged;
-
-            Port = 9998;
+            return port;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public int Port
+        set
         {
-            get
+            if (port != value)
             {
-                return port;
-            }
-
-            set
-            {
-                if (port != value)
-                {
-                    port = value;
-                    OnPropertyChanged(nameof(Port));
-                }
+                port = value;
+                OnPropertyChanged(nameof(Port));
             }
         }
+    }
 
-        public string Title => "Configure Provider";
+    public string Title => "Configure Provider";
 
-        public ReadOnlyObservableCollection<IWizardPage> Children { get; }
+    public ReadOnlyObservableCollection<IWizardPage> Children { get; }
 
-        public string Description => "Network settings to be used by new provider";
+    public string Description => "Network settings to be used by new provider";
 
-        public bool IsValid
+    public bool IsValid
+    {
+        get => isValid;
+        private set
         {
-            get => isValid;
-            private set
+            if (isValid != value)
             {
-                if (isValid != value)
-                {
-                    isValid = value;
-                    OnPropertyChanged(nameof(IsValid));
-                }
+                isValid = value;
+                OnPropertyChanged(nameof(IsValid));
             }
         }
+    }
 
-        public Control PageContent => this;
+    public Control PageContent => this;
 
-        public void AddChild(IWizardPage newItem)
+    public void AddChild(IWizardPage newItem)
+    {
+        children.Add(newItem);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public void RemoveChild(IWizardPage item)
+    {
+        children.Remove(item);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public object Save(object saveData)
+    {
+        Debug.Assert(saveData != null, "Expecting the save-data component to have details from the previous pages.");
+        Debug.Assert(
+            saveData is IProviderSettings, "Expecting the save-data component to be of an IProviderSettings type.");
+
+        var previousInfo = (IProviderSettings)saveData;
+        return new MsBuildListenerSettings(previousInfo);
+    }
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        if (handler != null)
         {
-            children.Add(newItem);
-            OnPropertyChanged(nameof(Children));
+            var e = new PropertyChangedEventArgs(propertyName);
+            handler(this, e);
         }
+    }
 
-        public void RemoveChild(IWizardPage item)
+    private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+    }
+
+    private void SelectProviderPagePropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "Port")
         {
-            children.Remove(item);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public object Save(object saveData)
-        {
-            Debug.Assert(saveData != null, "Expecting the save-data component to have details from the previous pages.");
-            Debug.Assert(
-                saveData is IProviderSettings, "Expecting the save-data component to be of an IProviderSettings type.");
-
-            var previousInfo = (IProviderSettings)saveData;
-            return new MsBuildListenerSettings(previousInfo);
-        }
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                var e = new PropertyChangedEventArgs(propertyName);
-                handler(this, e);
-            }
-        }
-
-        private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
-        {
-        }
-
-        private void SelectProviderPagePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "Port")
-            {
-                var state = port > 2000;
-                Trace.WriteLine($"Setting PageValidates to {state}");
-                IsValid = state;
-            }
+            var state = port > 2000;
+            Trace.WriteLine($"Setting PageValidates to {state}");
+            IsValid = state;
         }
     }
 }

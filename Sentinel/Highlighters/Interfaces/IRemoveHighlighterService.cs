@@ -1,7 +1,6 @@
-namespace Sentinel.Highlighters.Interfaces
+namespace Sentinel.Highlighters.Interfaces;
+
+public interface IRemoveHighlighterService
 {
-    public interface IRemoveHighlighterService
-    {
-        void Remove(IHighlighter highlighter);
-    }
+    void Remove(IHighlighter highlighter);
 }

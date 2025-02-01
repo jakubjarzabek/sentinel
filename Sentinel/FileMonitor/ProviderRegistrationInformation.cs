@@ -1,40 +1,39 @@
-namespace Sentinel.FileMonitor
+namespace Sentinel.FileMonitor;
+
+using System;
+
+using Sentinel.Interfaces.Providers;
+
+public class ProviderRegistrationInformation : IProviderRegistrationRecord
 {
-    using System;
-
-    using Sentinel.Interfaces.Providers;
-
-    public class ProviderRegistrationInformation : IProviderRegistrationRecord
+    public ProviderRegistrationInformation(IProviderInfo providerInfo)
     {
-        public ProviderRegistrationInformation(IProviderInfo providerInfo)
+        Info = providerInfo;
+    }
+
+    public Guid Identifier
+    {
+        get
         {
-            Info = providerInfo;
+            return Info.Identifier;
         }
+    }
 
-        public Guid Identifier
+    public IProviderInfo Info { get; private set; }
+
+    public Type Settings
+    {
+        get
         {
-            get
-            {
-                return Info.Identifier;
-            }
+            return typeof(FileMonitorProviderPage);
         }
+    }
 
-        public IProviderInfo Info { get; private set; }
-
-        public Type Settings
+    public Type Implementer
+    {
+        get
         {
-            get
-            {
-                return typeof(FileMonitorProviderPage);
-            }
-        }
-
-        public Type Implementer
-        {
-            get
-            {
-                return typeof(FileMonitoringProvider);
-            }
+            return typeof(FileMonitoringProvider);
         }
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace Sentinel.Extractors.Interfaces
+﻿namespace Sentinel.Extractors.Interfaces;
+
+public interface IRemoveExtractorService
 {
-    public interface IRemoveExtractorService
-    {
-        void Remove(IExtractor extractor);
-    }
+    void Remove(IExtractor extractor);
 }

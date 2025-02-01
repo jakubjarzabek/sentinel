@@ -1,44 +1,43 @@
-﻿namespace Sentinel.Classification.Gui
+﻿namespace Sentinel.Classification.Gui;
+
+using System.Windows;
+
+using Sentinel.Classification.Interfaces;
+using Sentinel.Services;
+
+public class AddClassifier : IAddClassifyingService
 {
-    using System.Windows;
-
-    using Sentinel.Classification.Interfaces;
-    using Sentinel.Services;
-
-    public class AddClassifier : IAddClassifyingService
+    public void Add()
     {
-        public void Add()
+        var classifierWindow = new AddEditClassifierWindow();
+        using (var data = new AddEditClassifier(classifierWindow, false))
         {
-            var classifierWindow = new AddEditClassifierWindow();
-            using (var data = new AddEditClassifier(classifierWindow, false))
-            {
-                classifierWindow.DataContext = data;
-                classifierWindow.Owner = Application.Current.MainWindow;
+            classifierWindow.DataContext = data;
+            classifierWindow.Owner = Application.Current.MainWindow;
 
-                var dialogResult = classifierWindow.ShowDialog();
-                if (dialogResult != null && (bool)dialogResult)
+            var dialogResult = classifierWindow.ShowDialog();
+            if (dialogResult != null && (bool)dialogResult)
+            {
+                var classifier = Construct(data);
+                if (classifier != null)
                 {
-                    var classifier = Construct(data);
-                    if (classifier != null)
-                    {
-                        var service = ServiceLocator.Instance.Get<IClassifyingService<IClassifier>>();
-                        service?.Classifiers.Add(classifier);
-                    }
+                    var service = ServiceLocator.Instance.Get<IClassifyingService<IClassifier>>();
+                    service?.Classifiers.Add(classifier);
                 }
             }
         }
+    }
 
-        private static Classifier Construct(AddEditClassifier data)
+    private static Classifier Construct(AddEditClassifier data)
+    {
+        return new Classifier
         {
-            return new Classifier
-                       {
-                           Name = data.Name,
-                           Type = data.Type,
-                           Field = data.Field,
-                           Mode = data.Mode,
-                           Pattern = data.Pattern,
-                           Enabled = true,
-                       };
-        }
+            Name = data.Name,
+            Type = data.Type,
+            Field = data.Field,
+            Mode = data.Mode,
+            Pattern = data.Pattern,
+            Enabled = true,
+        };
     }
 }

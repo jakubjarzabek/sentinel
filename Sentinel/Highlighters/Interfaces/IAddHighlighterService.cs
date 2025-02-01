@@ -1,7 +1,6 @@
-namespace Sentinel.Highlighters.Interfaces
+namespace Sentinel.Highlighters.Interfaces;
+
+public interface IAddHighlighterService
 {
-    public interface IAddHighlighterService
-    {
-        void Add();
-    }
+    void Add();
 }

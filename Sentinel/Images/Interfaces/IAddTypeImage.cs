@@ -1,7 +1,6 @@
-namespace Sentinel.Images.Interfaces
+namespace Sentinel.Images.Interfaces;
+
+public interface IAddTypeImage
 {
-    public interface IAddTypeImage
-    {
-        void Add();
-    }
+    void Add();
 }

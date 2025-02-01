@@ -1,27 +1,26 @@
-namespace Sentinel.Highlighters.Interfaces
+namespace Sentinel.Highlighters.Interfaces;
+
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+
+using Sentinel.Interfaces;
+
+public interface IHighlightingService<T>
+    where T : IHighlighter
 {
-    using System.Collections.ObjectModel;
-    using System.Windows.Input;
+    ICommand Add { get; }
 
-    using Sentinel.Interfaces;
+    ICommand Edit { get; }
 
-    public interface IHighlightingService<T>
-        where T : IHighlighter
-    {
-        ICommand Add { get; }
+    ObservableCollection<T> Highlighters { get; set; }
 
-        ICommand Edit { get; }
+    ICommand OrderEarlier { get; }
 
-        ObservableCollection<T> Highlighters { get; set; }
+    ICommand OrderLater { get; }
 
-        ICommand OrderEarlier { get; }
+    ICommand Remove { get; }
 
-        ICommand OrderLater { get; }
+    int SelectedIndex { get; set; }
 
-        ICommand Remove { get; }
-
-        int SelectedIndex { get; set; }
-
-        IHighlighterStyle IsHighlighted(ILogEntry entry);
-    }
+    IHighlighterStyle IsHighlighted(ILogEntry entry);
 }

@@ -1,8 +1,7 @@
-namespace Sentinel.MSBuild
-{
-    using Sentinel.Interfaces.Providers;
+namespace Sentinel.MSBuild;
 
-    public interface IMsBuildListenerSettings : IProviderSettings
-    {
-    }
+using Sentinel.Interfaces.Providers;
+
+public interface IMsBuildListenerSettings : IProviderSettings
+{
 }

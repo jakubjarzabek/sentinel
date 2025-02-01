@@ -1,10 +1,9 @@
-﻿namespace Sentinel.Interfaces.Providers
-{
-    using System.Runtime.Serialization;
+﻿namespace Sentinel.Interfaces.Providers;
 
-    public interface INetworkProvider : ILogProvider
-    {
-        [DataMember]
-        int Port { get; }
-    }
+using System.Runtime.Serialization;
+
+public interface INetworkProvider : ILogProvider
+{
+    [DataMember]
+    int Port { get; }
 }

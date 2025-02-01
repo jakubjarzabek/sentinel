@@ -1,56 +1,55 @@
-namespace Sentinel.Highlighters
+namespace Sentinel.Highlighters;
+
+using System.Runtime.Serialization;
+using System.Windows.Media;
+
+using Newtonsoft.Json;
+
+using Sentinel.Interfaces;
+
+using WpfExtras;
+
+[DataContract]
+public class HighlighterStyle : ViewModelBase, IHighlighterStyle
 {
-    using System.Runtime.Serialization;
-    using System.Windows.Media;
+    private Color? background;
 
-    using Newtonsoft.Json;
+    private Color? foreground;
 
-    using Sentinel.Interfaces;
-
-    using WpfExtras;
-
-    [DataContract]
-    public class HighlighterStyle : ViewModelBase, IHighlighterStyle
+    [DataMember]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Color? Background
     {
-        private Color? background;
-
-        private Color? foreground;
-
-        [DataMember]
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Color? Background
+        get
         {
-            get
-            {
-                return background;
-            }
-
-            set
-            {
-                if (value != background)
-                {
-                    background = value;
-                    OnPropertyChanged(nameof(Background));
-                }
-            }
+            return background;
         }
 
-        [DataMember]
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Color? Foreground
+        set
         {
-            get
+            if (value != background)
             {
-                return foreground;
+                background = value;
+                OnPropertyChanged(nameof(Background));
             }
+        }
+    }
 
-            set
+    [DataMember]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Color? Foreground
+    {
+        get
+        {
+            return foreground;
+        }
+
+        set
+        {
+            if (value != foreground)
             {
-                if (value != foreground)
-                {
-                    foreground = value;
-                    OnPropertyChanged(nameof(Foreground));
-                }
+                foreground = value;
+                OnPropertyChanged(nameof(Foreground));
             }
         }
     }

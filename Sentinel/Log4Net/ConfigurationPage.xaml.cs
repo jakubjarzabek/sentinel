@@ -1,148 +1,147 @@
-﻿namespace Sentinel.Log4Net
+﻿namespace Sentinel.Log4Net;
+
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Windows.Controls;
+
+using Sentinel.Interfaces.Providers;
+using Sentinel.WpfExtras;
+
+/// <summary>
+/// Interaction logic for NewConfigPage.xaml
+/// </summary>
+public partial class ConfigurationPage : UserControl, IWizardPage
 {
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Windows.Controls;
+    private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
-    using Sentinel.Interfaces.Providers;
-    using Sentinel.WpfExtras;
+    private readonly ReadOnlyObservableCollection<IWizardPage> readonlyChildren;
 
-    /// <summary>
-    /// Interaction logic for NewConfigPage.xaml
-    /// </summary>
-    public partial class ConfigurationPage : UserControl, IWizardPage
+    private bool isValid;
+
+    private int port;
+
+    public ConfigurationPage()
     {
-        private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
+        InitializeComponent();
+        DataContext = this;
 
-        private readonly ReadOnlyObservableCollection<IWizardPage> readonlyChildren;
+        readonlyChildren = new ReadOnlyObservableCollection<IWizardPage>(children);
 
-        private bool isValid;
+        // Register to self so that we can handler user interactions.
+        PropertyChanged += SelectProviderPagePropertyChanged;
 
-        private int port;
+        Port = 9998;
+    }
 
-        public ConfigurationPage()
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public int Port
+    {
+        get
         {
-            InitializeComponent();
-            DataContext = this;
-
-            readonlyChildren = new ReadOnlyObservableCollection<IWizardPage>(children);
-
-            // Register to self so that we can handler user interactions.
-            PropertyChanged += SelectProviderPagePropertyChanged;
-
-            Port = 9998;
+            return port;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public int Port
+        set
         {
-            get
+            if (port != value)
             {
-                return port;
-            }
-
-            set
-            {
-                if (port != value)
-                {
-                    port = value;
-                    OnPropertyChanged(nameof(Port));
-                }
+                port = value;
+                OnPropertyChanged(nameof(Port));
             }
         }
+    }
 
-        public string Title
+    public string Title
+    {
+        get
         {
-            get
+            return "Configure Provider";
+        }
+    }
+
+    public ReadOnlyObservableCollection<IWizardPage> Children
+    {
+        get
+        {
+            return readonlyChildren;
+        }
+    }
+
+    public string Description
+    {
+        get
+        {
+            return "Network settings to be used by new provider";
+        }
+    }
+
+    public bool IsValid
+    {
+        get
+        {
+            return isValid;
+        }
+
+        private set
+        {
+            if (isValid != value)
             {
-                return "Configure Provider";
+                isValid = value;
+                OnPropertyChanged(nameof(IsValid));
             }
         }
+    }
 
-        public ReadOnlyObservableCollection<IWizardPage> Children
+    public Control PageContent
+    {
+        get
         {
-            get
-            {
-                return readonlyChildren;
-            }
+            return this;
         }
+    }
 
-        public string Description
+    public void AddChild(IWizardPage newItem)
+    {
+        children.Add(newItem);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public void RemoveChild(IWizardPage item)
+    {
+        children.Remove(item);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public object Save(object saveData)
+    {
+        Debug.Assert(saveData != null, "Expecting the save-data component to have details from the previous pages.");
+        Debug.Assert(
+            saveData is IProviderSettings,
+            "Expecting the save-data component to be of an IProviderSettings type.");
+
+        var providerInfo = (IProviderSettings)saveData;
+        return new UdpAppenderSettings(providerInfo) { Port = Port };
+    }
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        if (handler != null)
         {
-            get
-            {
-                return "Network settings to be used by new provider";
-            }
+            var e = new PropertyChangedEventArgs(propertyName);
+            handler(this, e);
         }
+    }
 
-        public bool IsValid
+    private void SelectProviderPagePropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "Port")
         {
-            get
-            {
-                return isValid;
-            }
-
-            private set
-            {
-                if (isValid != value)
-                {
-                    isValid = value;
-                    OnPropertyChanged(nameof(IsValid));
-                }
-            }
-        }
-
-        public Control PageContent
-        {
-            get
-            {
-                return this;
-            }
-        }
-
-        public void AddChild(IWizardPage newItem)
-        {
-            children.Add(newItem);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public void RemoveChild(IWizardPage item)
-        {
-            children.Remove(item);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public object Save(object saveData)
-        {
-            Debug.Assert(saveData != null, "Expecting the save-data component to have details from the previous pages.");
-            Debug.Assert(
-                saveData is IProviderSettings,
-                "Expecting the save-data component to be of an IProviderSettings type.");
-
-            var providerInfo = (IProviderSettings)saveData;
-            return new UdpAppenderSettings(providerInfo) { Port = Port };
-        }
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                var e = new PropertyChangedEventArgs(propertyName);
-                handler(this, e);
-            }
-        }
-
-        private void SelectProviderPagePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "Port")
-            {
-                var state = port > 2000;
-                Trace.WriteLine(string.Format("Setting PageValidates to {0}", state));
-                IsValid = state;
-            }
+            var state = port > 2000;
+            Trace.WriteLine(string.Format("Setting PageValidates to {0}", state));
+            IsValid = state;
         }
     }
 }

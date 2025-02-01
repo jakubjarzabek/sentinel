@@ -1,45 +1,44 @@
-namespace Sentinel.Highlighters
+namespace Sentinel.Highlighters;
+
+using System;
+using System.Globalization;
+using System.Windows.Data;
+using log4net;
+using Sentinel.Highlighters.Interfaces;
+using Sentinel.Interfaces;
+
+public class HighlighterConverter : IValueConverter
 {
-    using System;
-    using System.Globalization;
-    using System.Windows.Data;
-    using log4net;
-    using Sentinel.Highlighters.Interfaces;
-    using Sentinel.Interfaces;
+    private static readonly ILog Log = LogManager.GetLogger(typeof(HighlighterConverter));
 
-    public class HighlighterConverter : IValueConverter
+    public HighlighterConverter(IHighlighter highlighter)
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(HighlighterConverter));
+        Highlighter = highlighter;
+    }
 
-        public HighlighterConverter(IHighlighter highlighter)
+    private IHighlighter Highlighter { get; }
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var match = false;
+        if (value != null)
         {
-            Highlighter = highlighter;
-        }
-
-        private IHighlighter Highlighter { get; }
-
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            var match = false;
-            if (value != null)
+            var entry = value as ILogEntry;
+            if (entry == null)
             {
-                var entry = value as ILogEntry;
-                if (entry == null)
-                {
-                    Log.WarnFormat("Expected 'value' to be an ILogEntry but found {0}", value);
-                }
-                else
-                {
-                    match = Highlighter.Enabled && Highlighter.IsMatch(entry);
-                }
+                Log.WarnFormat("Expected 'value' to be an ILogEntry but found {0}", value);
             }
-
-            return match ? "Match" : "Not Match";
+            else
+            {
+                match = Highlighter.Enabled && Highlighter.IsMatch(entry);
+            }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        return match ? "Match" : "Not Match";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -1,7 +1,6 @@
-namespace Sentinel.Logger
+namespace Sentinel.Logger;
+
+public interface ILogViewerDetails
 {
-    public interface ILogViewerDetails
-    {
-        string LogViewerName { get; }
-    }
+    string LogViewerName { get; }
 }

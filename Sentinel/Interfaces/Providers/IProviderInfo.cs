@@ -1,17 +1,16 @@
-namespace Sentinel.Interfaces.Providers
+namespace Sentinel.Interfaces.Providers;
+
+using System;
+using System.Runtime.Serialization;
+
+public interface IProviderInfo
 {
-    using System;
-    using System.Runtime.Serialization;
+    [DataMember]
+    Guid Identifier { get; }
 
-    public interface IProviderInfo
-    {
-        [DataMember]
-        Guid Identifier { get; }
+    [DataMember]
+    string Name { get; }
 
-        [DataMember]
-        string Name { get; }
-
-        [DataMember]
-        string Description { get; }
-    }
+    [DataMember]
+    string Description { get; }
 }

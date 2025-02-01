@@ -1,37 +1,36 @@
-﻿namespace Sentinel.Support.Converters
+﻿namespace Sentinel.Support.Converters;
+
+using System;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Windows.Data;
+
+[ValueConversion(typeof(string), typeof(string))]
+public class LongPathToShortPathConverter : IValueConverter
 {
-    using System;
-    using System.Globalization;
-    using System.IO;
-    using System.Text;
-    using System.Windows.Data;
-
-    [ValueConversion(typeof(string), typeof(string))]
-    public class LongPathToShortPathConverter : IValueConverter
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        var valueString = (string)value;
+        var pathParts = valueString.Split(Path.DirectorySeparatorChar);
+
+        if (pathParts.Length > 6)
         {
-            var valueString = (string)value;
-            var pathParts = valueString.Split(Path.DirectorySeparatorChar);
+            var retData = new StringBuilder();
+            retData.Append(Path.Combine(pathParts[0], pathParts[1], pathParts[3]));
+            retData.Append("...");
+            retData.Append(Path.Combine(pathParts[pathParts.Length - 2], pathParts[pathParts.Length - 1]));
 
-            if (pathParts.Length > 6)
-            {
-                var retData = new StringBuilder();
-                retData.Append(Path.Combine(pathParts[0], pathParts[1], pathParts[3]));
-                retData.Append("...");
-                retData.Append(Path.Combine(pathParts[pathParts.Length - 2], pathParts[pathParts.Length - 1]));
-
-                return retData.ToString();
-            }
-            else
-            {
-                return valueString;
-            }
+            return retData.ToString();
         }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        else
         {
-            throw new NotImplementedException();
+            return valueString;
         }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }

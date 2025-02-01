@@ -1,9 +1,8 @@
-namespace Sentinel.Logger
-{
-    using Sentinel.Views.Interfaces;
+namespace Sentinel.Logger;
 
-    public interface IUdpLogViewer : ILogViewer
-    {
-        int Port { get; set; }
-    }
+using Sentinel.Views.Interfaces;
+
+public interface IUdpLogViewer : ILogViewer
+{
+    int Port { get; set; }
 }

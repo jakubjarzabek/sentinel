@@ -1,330 +1,329 @@
-﻿namespace Sentinel.NLog
+﻿namespace Sentinel.NLog;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using log4net;
+using Sentinel.Interfaces;
+using Sentinel.Interfaces.CodeContracts;
+using Sentinel.Interfaces.Providers;
+
+public class NLogViewerProvider : INetworkProvider
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using System.Xml.Linq;
-    using log4net;
-    using Sentinel.Interfaces;
-    using Sentinel.Interfaces.CodeContracts;
-    using Sentinel.Interfaces.Providers;
+    public static readonly IProviderRegistrationRecord ProviderRegistrationInformation
+        = new ProviderRegistrationInformation(new ProviderInfo());
 
-    public class NLogViewerProvider : INetworkProvider
+    private const int PumpFrequency = 100;
+
+    private const string ApacheNamespace = "http://jakarta.apache.org/log4j/";
+
+    private static readonly DateTime Log4JDateBase = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static readonly ILog Log = LogManager.GetLogger(typeof(NLogViewerProvider));
+
+    private readonly XNamespace log4JNamespace = "unique";
+
+    private readonly XNamespace entryNamespace = "nlogUnique";
+
+    private readonly XNamespace apacheLog4JNamespace = ApacheNamespace;
+
+    private readonly Queue<string> pendingQueue = new Queue<string>();
+
+    private readonly INLogAppenderSettings networkSettings;
+
+    private CancellationTokenSource cancellationTokenSource;
+
+    private Task listenerTask;
+
+    public NLogViewerProvider(IProviderSettings settings)
     {
-        public static readonly IProviderRegistrationRecord ProviderRegistrationInformation
-            = new ProviderRegistrationInformation(new ProviderInfo());
+        settings.ThrowIfNull(nameof(settings));
 
-        private const int PumpFrequency = 100;
+        networkSettings = settings as INLogAppenderSettings;
+        networkSettings.ThrowIfNull(nameof(networkSettings));
 
-        private const string ApacheNamespace = "http://jakarta.apache.org/log4j/";
+        Information = ProviderRegistrationInformation.Info;
+        ProviderSettings = networkSettings;
+    }
 
-        private static readonly DateTime Log4JDateBase = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    public IProviderInfo Information { get; private set; }
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(NLogViewerProvider));
+    public IProviderSettings ProviderSettings { get; private set; }
 
-        private readonly XNamespace log4JNamespace = "unique";
+    public ILogger Logger { get; set; }
 
-        private readonly XNamespace entryNamespace = "nlogUnique";
+    public string Name { get; set; }
 
-        private readonly XNamespace apacheLog4JNamespace = ApacheNamespace;
+    public bool IsActive => listenerTask != null && listenerTask.Status == TaskStatus.Running;
 
-        private readonly Queue<string> pendingQueue = new Queue<string>();
+    public int Port { get; private set; }
 
-        private readonly INLogAppenderSettings networkSettings;
+    public void Start()
+    {
+        Log.Debug("Start requested");
 
-        private CancellationTokenSource cancellationTokenSource;
-
-        private Task listenerTask;
-
-        public NLogViewerProvider(IProviderSettings settings)
+        if (listenerTask == null || listenerTask.IsCompleted)
         {
-            settings.ThrowIfNull(nameof(settings));
+            cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
 
-            networkSettings = settings as INLogAppenderSettings;
-            networkSettings.ThrowIfNull(nameof(networkSettings));
+            listenerTask = Task.Factory.StartNew(SocketListener, token);
+            Task.Factory.StartNew(MessagePump, token);
+        }
+        else
+        {
+            Log.WarnFormat(
+                "{0} listener task is already active and can not be started again.",
+                networkSettings.Protocol);
+        }
+    }
 
-            Information = ProviderRegistrationInformation.Info;
-            ProviderSettings = networkSettings;
+    public void Pause()
+    {
+        Log.Debug("Pause requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
+        {
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
+        }
+    }
+
+    public void Close()
+    {
+        Log.Debug("Close requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
+        {
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
+        }
+    }
+
+    private void SocketListener()
+    {
+        Log.Debug("SocketListener started");
+
+        if (networkSettings == null)
+        {
+            Log.Error("Network settings has not been initialized");
+            throw new NullReferenceException();
         }
 
-        public IProviderInfo Information { get; private set; }
-
-        public IProviderSettings ProviderSettings { get; private set; }
-
-        public ILogger Logger { get; set; }
-
-        public string Name { get; set; }
-
-        public bool IsActive => listenerTask != null && listenerTask.Status == TaskStatus.Running;
-
-        public int Port { get; private set; }
-
-        public void Start()
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("Start requested");
+            var endPoint = new IPEndPoint(IPAddress.Any, networkSettings.Port);
 
-            if (listenerTask == null || listenerTask.IsCompleted)
+            var networkProtocolDescription = networkSettings.Protocol.ToString();
+
+            using (var listener = new NetworkClientWrapper(networkSettings.Protocol, endPoint, cancellationTokenSource.Token))
             {
-                cancellationTokenSource = new CancellationTokenSource();
-                var token = cancellationTokenSource.Token;
+                var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-                listenerTask = Task.Factory.StartNew(SocketListener, token);
-                Task.Factory.StartNew(MessagePump, token);
-            }
-            else
-            {
-                Log.WarnFormat(
-                    "{0} listener task is already active and can not be started again.",
-                    networkSettings.Protocol);
-            }
-        }
-
-        public void Pause()
-        {
-            Log.Debug("Pause requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
-        }
-
-        public void Close()
-        {
-            Log.Debug("Close requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
-        }
-
-        private void SocketListener()
-        {
-            Log.Debug("SocketListener started");
-
-            if (networkSettings == null)
-            {
-                Log.Error("Network settings has not been initialized");
-                throw new NullReferenceException();
-            }
-
-            while (!cancellationTokenSource.IsCancellationRequested)
-            {
-                var endPoint = new IPEndPoint(IPAddress.Any, networkSettings.Port);
-
-                var networkProtocolDescription = networkSettings.Protocol.ToString();
-
-                using (var listener = new NetworkClientWrapper(networkSettings.Protocol, endPoint, cancellationTokenSource.Token))
+                while (!cancellationTokenSource.IsCancellationRequested)
                 {
-                    var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-
-                    while (!cancellationTokenSource.IsCancellationRequested)
+                    try
                     {
-                        try
-                        {
-                            var bytes = listener.Receive(ref remoteEndPoint, 1000);
+                        var bytes = listener.Receive(ref remoteEndPoint, 1000);
 
-                            if (Log.IsDebugEnabled)
-                                Log.DebugFormat(
-                                    "Received {0} bytes from {1} ({2})",
-                                    bytes.Length,
-                                    remoteEndPoint.Address,
-                                    networkProtocolDescription);
+                        if (Log.IsDebugEnabled)
+                            Log.DebugFormat(
+                                "Received {0} bytes from {1} ({2})",
+                                bytes.Length,
+                                remoteEndPoint.Address,
+                                networkProtocolDescription);
 
-                            var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            lock (pendingQueue)
-                            {
-                                pendingQueue.Enqueue(message);
-                            }
-                        }
-                        catch (SocketException socketException)
+                        var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                        lock (pendingQueue)
                         {
-                            if (socketException.SocketErrorCode != SocketError.TimedOut)
-                            {
-                                Log.Error("SocketException", socketException);
-                                Log.DebugFormat(
-                                    "SocketException.SocketErrorCode = {0}",
-                                    socketException.SocketErrorCode);
+                            pendingQueue.Enqueue(message);
+                        }
+                    }
+                    catch (SocketException socketException)
+                    {
+                        if (socketException.SocketErrorCode != SocketError.TimedOut)
+                        {
+                            Log.Error("SocketException", socketException);
+                            Log.DebugFormat(
+                                "SocketException.SocketErrorCode = {0}",
+                                socketException.SocketErrorCode);
 
-                                // Break out of the 'using socket' loop and try to establish a new socket.
-                                break;
-                            }
+                            // Break out of the 'using socket' loop and try to establish a new socket.
+                            break;
                         }
-                        catch (Exception e)
-                        {
-                            Log.Error("Network Exception", e);
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("Network Exception", e);
                     }
                 }
             }
-
-            Log.Debug("SocketListener completed");
         }
 
-        private void MessagePump()
+        Log.Debug("SocketListener completed");
+    }
+
+    private void MessagePump()
+    {
+        Log.Debug("MessagePump started");
+
+        var processedQueue = new Queue<ILogEntry>();
+
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("MessagePump started");
+            Thread.Sleep(PumpFrequency);
 
-            var processedQueue = new Queue<ILogEntry>();
-
-            while (!cancellationTokenSource.IsCancellationRequested)
+            try
             {
-                Thread.Sleep(PumpFrequency);
-
-                try
+                if (Logger != null)
                 {
-                    if (Logger != null)
+                    lock (pendingQueue)
                     {
-                        lock (pendingQueue)
+                        while (pendingQueue.Count > 0)
                         {
-                            while (pendingQueue.Count > 0)
+                            var message = pendingQueue.Dequeue();
+
+                            if (IsValidEntry(message))
                             {
-                                var message = pendingQueue.Dequeue();
+                                var deserializeMessage = DecodeEntry(message);
 
-                                if (IsValidEntry(message))
+                                if (deserializeMessage != null)
                                 {
-                                    var deserializeMessage = DecodeEntry(message);
-
-                                    if (deserializeMessage != null)
-                                    {
-                                        processedQueue.Enqueue(deserializeMessage);
-                                    }
+                                    processedQueue.Enqueue(deserializeMessage);
                                 }
                             }
                         }
-
-                        if (processedQueue.Any())
-                        {
-                            Logger.AddBatch(processedQueue);
-                        }
                     }
-                }
-                catch (Exception e)
-                {
-                    Log.Error("MessagePump Exception", e);
-                }
-                finally
-                {
-                    processedQueue.Clear();
-                }
-            }
 
-            Log.Debug("MessagePump completed");
-        }
-
-        private bool IsValidEntry(string logEntry)
-        {
-            return logEntry.StartsWith("<log4j");
-        }
-
-        private LogEntry DecodeEntry(string m)
-        {
-            // Record the current date/time
-            var receivedTime = DateTime.UtcNow;
-
-            var message = $@"<entry xmlns:log4j=""{log4JNamespace}"" xmlns:nlog=""{entryNamespace}"">{m}</entry>";
-            var element = XElement.Parse(message);
-
-            // serilog nlogFormatting uses an explicit namespace, detect it when used.
-            var eventNamespace = message.Contains(ApacheNamespace) ? apacheLog4JNamespace : log4JNamespace;
-            var @event = element.Element(eventNamespace + "event");
-            if (@event == null)
-            {
-                return null;
-            }
-
-            // Establish whether a sub-system seems to be defined.
-            var description = @event.Element(eventNamespace + "message")?.Value ?? string.Empty;
-
-            var classification = string.Empty;
-            var system = @event.Attribute("logger")?.Value ?? string.Empty;
-            var type = @event.Attribute("level")?.Value ?? string.Empty;
-            var host = "Unknown";
-
-            var meta = new Dictionary<string, object>();
-
-            foreach (var propertyElement in @event.Element(eventNamespace + "properties")?.Elements()
-                                            ?? Enumerable.Empty<XElement>())
-            {
-                if (propertyElement.Name == eventNamespace + "data")
-                {
-                    var name = propertyElement.Attribute("name")?.Value;
-                    var value = propertyElement.Attribute("value")?.Value;
-
-                    if (name == "log4jmachinename")
+                    if (processedQueue.Any())
                     {
-                        host = value;
-                    }
-                    else if (!string.IsNullOrWhiteSpace(name))
-                    {
-                        if (meta.ContainsKey(name))
-                        {
-                            Log.Warn($"Already have property of {name}, overwriting");
-                        }
-
-                        meta.Add(name, value);
+                        Logger.AddBatch(processedQueue);
                     }
                 }
             }
-
-            var source = @event.Element(eventNamespace + "locationInfo");
-
-            // Any source information
-            var className = source?.Attribute("class")?.Value ?? string.Empty;
-            var methodName = source?.Attribute("method")?.Value ?? string.Empty;
-            var sourceFile = source?.Attribute("file")?.Value ?? string.Empty;
-            var line = source?.Attribute("line")?.Value ?? string.Empty;
-
-            var timestampValue = @event.Attribute("timestamp")?.Value;
-            var date = DateTime.UtcNow;
-            if (timestampValue != null)
+            catch (Exception e)
             {
-                var timestamp = double.Parse(timestampValue);
-                date = Log4JDateBase + TimeSpan.FromMilliseconds(timestamp);
+                Log.Error("MessagePump Exception", e);
             }
-
-            meta["Classification"] = classification;
-            meta["Host"] = host;
-
-            var entry = new LogEntry
-                            {
-                                DateTime = date,
-                                System = system,
-                                Thread = @event.Attribute("thread")?.Value ?? string.Empty,
-                                Description = description,
-                                Type = type,
-                                MetaData = meta,
-                            };
-
-            // Determine whether this constitutes an exception
-            var throwable = @event.Element(eventNamespace + "throwable");
-            if (throwable != null)
+            finally
             {
-                entry.MetaData.Add("Exception", throwable.Value);
+                processedQueue.Clear();
             }
-            else if (entry.Description.ToUpper().Contains("EXCEPTION"))
-            {
-                entry.MetaData.Add("Exception", true);
-            }
-
-            if (!string.IsNullOrWhiteSpace(className))
-            {
-                // TODO: use an object for these?
-                meta.Add("ClassName", className);
-                meta.Add("MethodName", methodName);
-                meta.Add("SourceFile", sourceFile);
-                meta.Add("SourceLine", line);
-            }
-
-            meta.Add("ReceivedTime", receivedTime);
-
-            return entry;
         }
+
+        Log.Debug("MessagePump completed");
+    }
+
+    private bool IsValidEntry(string logEntry)
+    {
+        return logEntry.StartsWith("<log4j");
+    }
+
+    private LogEntry DecodeEntry(string m)
+    {
+        // Record the current date/time
+        var receivedTime = DateTime.UtcNow;
+
+        var message = $@"<entry xmlns:log4j=""{log4JNamespace}"" xmlns:nlog=""{entryNamespace}"">{m}</entry>";
+        var element = XElement.Parse(message);
+
+        // serilog nlogFormatting uses an explicit namespace, detect it when used.
+        var eventNamespace = message.Contains(ApacheNamespace) ? apacheLog4JNamespace : log4JNamespace;
+        var @event = element.Element(eventNamespace + "event");
+        if (@event == null)
+        {
+            return null;
+        }
+
+        // Establish whether a sub-system seems to be defined.
+        var description = @event.Element(eventNamespace + "message")?.Value ?? string.Empty;
+
+        var classification = string.Empty;
+        var system = @event.Attribute("logger")?.Value ?? string.Empty;
+        var type = @event.Attribute("level")?.Value ?? string.Empty;
+        var host = "Unknown";
+
+        var meta = new Dictionary<string, object>();
+
+        foreach (var propertyElement in @event.Element(eventNamespace + "properties")?.Elements()
+                                        ?? Enumerable.Empty<XElement>())
+        {
+            if (propertyElement.Name == eventNamespace + "data")
+            {
+                var name = propertyElement.Attribute("name")?.Value;
+                var value = propertyElement.Attribute("value")?.Value;
+
+                if (name == "log4jmachinename")
+                {
+                    host = value;
+                }
+                else if (!string.IsNullOrWhiteSpace(name))
+                {
+                    if (meta.ContainsKey(name))
+                    {
+                        Log.Warn($"Already have property of {name}, overwriting");
+                    }
+
+                    meta.Add(name, value);
+                }
+            }
+        }
+
+        var source = @event.Element(eventNamespace + "locationInfo");
+
+        // Any source information
+        var className = source?.Attribute("class")?.Value ?? string.Empty;
+        var methodName = source?.Attribute("method")?.Value ?? string.Empty;
+        var sourceFile = source?.Attribute("file")?.Value ?? string.Empty;
+        var line = source?.Attribute("line")?.Value ?? string.Empty;
+
+        var timestampValue = @event.Attribute("timestamp")?.Value;
+        var date = DateTime.UtcNow;
+        if (timestampValue != null)
+        {
+            var timestamp = double.Parse(timestampValue);
+            date = Log4JDateBase + TimeSpan.FromMilliseconds(timestamp);
+        }
+
+        meta["Classification"] = classification;
+        meta["Host"] = host;
+
+        var entry = new LogEntry
+        {
+            DateTime = date,
+            System = system,
+            Thread = @event.Attribute("thread")?.Value ?? string.Empty,
+            Description = description,
+            Type = type,
+            MetaData = meta,
+        };
+
+        // Determine whether this constitutes an exception
+        var throwable = @event.Element(eventNamespace + "throwable");
+        if (throwable != null)
+        {
+            entry.MetaData.Add("Exception", throwable.Value);
+        }
+        else if (entry.Description.ToUpper().Contains("EXCEPTION"))
+        {
+            entry.MetaData.Add("Exception", true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(className))
+        {
+            // TODO: use an object for these?
+            meta.Add("ClassName", className);
+            meta.Add("MethodName", methodName);
+            meta.Add("SourceFile", sourceFile);
+            meta.Add("SourceLine", line);
+        }
+
+        meta.Add("ReceivedTime", receivedTime);
+
+        return entry;
     }
 }

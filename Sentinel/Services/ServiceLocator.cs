@@ -1,116 +1,115 @@
-﻿namespace Sentinel.Services
+﻿namespace Sentinel.Services;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+using log4net;
+
+using Sentinel.Interfaces;
+
+public class ServiceLocator
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Linq;
-    using System.Windows;
+    private static readonly ILog Log = LogManager.GetLogger(typeof(ServiceLocator));
 
-    using log4net;
+    private readonly Dictionary<Type, object> services = new Dictionary<Type, object>();
 
-    using Sentinel.Interfaces;
-
-    public class ServiceLocator
+    private ServiceLocator()
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(ServiceLocator));
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        Log.DebugFormat("App Data folder {0}", appData);
 
-        private readonly Dictionary<Type, object> services = new Dictionary<Type, object>();
+        SaveLocation = Path.Combine(appData, "Sentinel");
+        Log.DebugFormat("Save location for internal files: {0}", SaveLocation);
 
-        private ServiceLocator()
+        // Check the folder exists, otherwise create it
+        var di = new DirectoryInfo(SaveLocation);
+        if (!di.Exists)
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            Log.DebugFormat("App Data folder {0}", appData);
-
-            SaveLocation = Path.Combine(appData, "Sentinel");
-            Log.DebugFormat("Save location for internal files: {0}", SaveLocation);
-
-            // Check the folder exists, otherwise create it
-            var di = new DirectoryInfo(SaveLocation);
-            if (!di.Exists)
+            Log.DebugFormat("Creating folder {0}", SaveLocation);
+            try
             {
-                Log.DebugFormat("Creating folder {0}", SaveLocation);
-                try
-                {
-                    di.Create();
-                }
-                catch (Exception e)
-                {
-                    Log.Error("Unable to create directory", e);
-                }
+                di.Create();
+            }
+            catch (Exception e)
+            {
+                Log.Error("Unable to create directory", e);
             }
         }
+    }
 
-        public static ServiceLocator Instance { get; } = new ServiceLocator();
+    public static ServiceLocator Instance { get; } = new ServiceLocator();
 
-        public string SaveLocation { get; private set; }
+    public string SaveLocation { get; private set; }
 
-        public ReadOnlyCollection<object> RegisteredServices
+    public ReadOnlyCollection<object> RegisteredServices
+    {
+        get
         {
-            get
-            {
-                Debug.Assert(services.Values != null, "Values collection should always exist");
-                return new ReadOnlyCollection<object>(services.Values.ToList());
-            }
+            Debug.Assert(services.Values != null, "Values collection should always exist");
+            return new ReadOnlyCollection<object>(services.Values.ToList());
+        }
+    }
+
+    public bool ReportErrors { get; set; }
+
+    [SuppressMessage(
+        "Microsoft.Design",
+        "CA1004:GenericMethodsShouldProvideTypeParameter",
+        Justification = "This approach has been chosen as the intended usage style.")]
+    public T Get<T>()
+    {
+        if (services.ContainsKey(typeof(T)))
+        {
+            return (T)services[typeof(T)];
         }
 
-        public bool ReportErrors { get; set; }
-
-        [SuppressMessage(
-            "Microsoft.Design",
-            "CA1004:GenericMethodsShouldProvideTypeParameter",
-            Justification = "This approach has been chosen as the intended usage style.")]
-        public T Get<T>()
+        if (ReportErrors)
         {
-            if (services.ContainsKey(typeof(T)))
-            {
-                return (T)services[typeof(T)];
-            }
-
-            if (ReportErrors)
-            {
-                var errorMessage = $"No registered service supporting {typeof(T)}";
-                Log.Error(errorMessage);
-                MessageBox.Show(errorMessage, "Service location error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            return default(T);
+            var errorMessage = $"No registered service supporting {typeof(T)}";
+            Log.Error(errorMessage);
+            MessageBox.Show(errorMessage, "Service location error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        [SuppressMessage(
-            "Microsoft.Design",
-            "CA1004:GenericMethodsShouldProvideTypeParameter",
-            Justification = "The generic style registration is desired, despite this rule.")]
-        public bool IsRegistered<T>()
+        return default(T);
+    }
+
+    [SuppressMessage(
+        "Microsoft.Design",
+        "CA1004:GenericMethodsShouldProvideTypeParameter",
+        Justification = "The generic style registration is desired, despite this rule.")]
+    public bool IsRegistered<T>()
+    {
+        return services.Keys.Contains(typeof(T));
+    }
+
+    [SuppressMessage(
+        "Microsoft.Design",
+        "CA1004:GenericMethodsShouldProvideTypeParameter",
+        Justification = "The generic style registration is desired, despite this rule.")]
+    public void Register<T>(object serviceInstance)
+    {
+        services[typeof(T)] = serviceInstance;
+    }
+
+    public void Register(Type keyType, Type instanceType, bool replace)
+    {
+        Log.DebugFormat(
+            "Registering Type instance of '{0}' to signature of '{1}'",
+            instanceType.Name,
+            keyType.Name);
+
+        if (!services.Keys.Contains(keyType) || replace)
         {
-            return services.Keys.Contains(typeof(T));
-        }
+            services[keyType] = Activator.CreateInstance(instanceType);
 
-        [SuppressMessage(
-            "Microsoft.Design",
-            "CA1004:GenericMethodsShouldProvideTypeParameter",
-            Justification = "The generic style registration is desired, despite this rule.")]
-        public void Register<T>(object serviceInstance)
-        {
-            services[typeof(T)] = serviceInstance;
-        }
-
-        public void Register(Type keyType, Type instanceType, bool replace)
-        {
-            Log.DebugFormat(
-                "Registering Type instance of '{0}' to signature of '{1}'",
-                instanceType.Name,
-                keyType.Name);
-
-            if (!services.Keys.Contains(keyType) || replace)
-            {
-                services[keyType] = Activator.CreateInstance(instanceType);
-
-                var defaultInitialisation = services[keyType] as IDefaultInitialisation;
-                defaultInitialisation?.Initialise();
-            }
+            var defaultInitialisation = services[keyType] as IDefaultInitialisation;
+            defaultInitialisation?.Initialise();
         }
     }
 }

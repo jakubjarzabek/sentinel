@@ -1,24 +1,23 @@
-﻿namespace Sentinel.Images.Interfaces
+﻿namespace Sentinel.Images.Interfaces;
+
+using System.Collections.ObjectModel;
+using System.Runtime.Serialization;
+using System.Windows.Input;
+
+public interface ITypeImageService
 {
-    using System.Collections.ObjectModel;
-    using System.Runtime.Serialization;
-    using System.Windows.Input;
+    ICommand Add { get; }
 
-    public interface ITypeImageService
-    {
-        ICommand Add { get; }
+    ICommand Edit { get; }
 
-        ICommand Edit { get; }
+    [DataMember]
+    ObservableCollection<ImageTypeRecord> ImageMappings { get; }
 
-        [DataMember]
-        ObservableCollection<ImageTypeRecord> ImageMappings { get; }
+    ICommand Remove { get; }
 
-        ICommand Remove { get; }
+    int SelectedIndex { get; set; }
 
-        int SelectedIndex { get; set; }
+    void Register(string type, ImageQuality quality, string image);
 
-        void Register(string type, ImageQuality quality, string image);
-
-        ImageTypeRecord Get(string type, ImageOptions options);
-    }
+    ImageTypeRecord Get(string type, ImageOptions options);
 }

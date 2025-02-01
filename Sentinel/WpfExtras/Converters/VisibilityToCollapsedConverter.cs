@@ -1,36 +1,35 @@
-﻿namespace Sentinel.WpfExtras.Converters
+﻿namespace Sentinel.WpfExtras.Converters;
+
+using System;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+
+public class VisibilityToCollapsedConverter : IValueConverter
 {
-    using System;
-    using System.Globalization;
-    using System.Windows;
-    using System.Windows.Data;
-
-    public class VisibilityToCollapsedConverter : IValueConverter
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        var isVisible = (bool?)value ?? false;
+
+        // If a parameter is supplied, invert the condition.
+        if (parameter != null)
         {
-            var isVisible = (bool?)value ?? false;
-
-            // If a parameter is supplied, invert the condition.
-            if (parameter != null)
-            {
-                isVisible = !isVisible;
-            }
-
-            return isVisible ? Visibility.Visible : Visibility.Collapsed;
+            isVisible = !isVisible;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        return isVisible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var isVisible = (bool)value;
+
+        // If a parameter is supplied, invert the condition.
+        if (parameter != null)
         {
-            var isVisible = (bool)value;
-
-            // If a parameter is supplied, invert the condition.
-            if (parameter != null)
-            {
-                isVisible = !isVisible;
-            }
-
-            return isVisible ? Visibility.Collapsed : Visibility.Visible;
+            isVisible = !isVisible;
         }
+
+        return isVisible ? Visibility.Collapsed : Visibility.Visible;
     }
 }

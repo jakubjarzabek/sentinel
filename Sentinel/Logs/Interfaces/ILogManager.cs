@@ -1,15 +1,14 @@
-namespace Sentinel.Logs.Interfaces
+namespace Sentinel.Logs.Interfaces;
+
+using System.Collections.Generic;
+
+using Sentinel.Interfaces;
+
+public interface ILogManager : IEnumerable<ILogger>
 {
-    using System.Collections.Generic;
+    ILogger Add(string logName);
 
-    using Sentinel.Interfaces;
+    ILogger Get(string name);
 
-    public interface ILogManager : IEnumerable<ILogger>
-    {
-        ILogger Add(string logName);
-
-        ILogger Get(string name);
-
-        void Remove(string name);
-    }
+    void Remove(string name);
 }

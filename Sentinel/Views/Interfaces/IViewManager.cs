@@ -1,19 +1,18 @@
-namespace Sentinel.Views.Interfaces
+namespace Sentinel.Views.Interfaces;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
+public interface IViewManager
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
+    ObservableCollection<IWindowFrame> Viewers { get; }
 
-    public interface IViewManager
-    {
-        ObservableCollection<IWindowFrame> Viewers { get; }
+    IEnumerable<IViewInformation> Registered { get; }
 
-        IEnumerable<IViewInformation> Registered { get; }
+    void Register(IViewInformation info, Type viewerType);
 
-        void Register(IViewInformation info, Type viewerType);
+    IViewInformation Get(string identifier);
 
-        IViewInformation Get(string identifier);
-
-        ILogViewer GetInstance(string identifier);
-    }
+    ILogViewer GetInstance(string identifier);
 }

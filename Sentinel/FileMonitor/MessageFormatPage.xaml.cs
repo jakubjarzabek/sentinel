@@ -1,170 +1,169 @@
-﻿namespace Sentinel.FileMonitor
+﻿namespace Sentinel.FileMonitor;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using WpfExtras;
+
+/// <summary>
+///   Interaction logic for MessageFormatPage.xaml.
+/// </summary>
+public partial class MessageFormatPage : IWizardPage
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Windows;
-    using System.Windows.Controls;
-    using WpfExtras;
+    private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
-    /// <summary>
-    ///   Interaction logic for MessageFormatPage.xaml.
-    /// </summary>
-    public partial class MessageFormatPage : IWizardPage
+    private readonly ReadOnlyObservableCollection<IWizardPage> readonlyChildren;
+
+    private bool showCustomWarning = false;
+
+    private int selectedDecoderIndex;
+
+    private IWizardPage customPage = null;
+
+    public MessageFormatPage()
     {
-        private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
+        InitializeComponent();
+        DataContext = this;
 
-        private readonly ReadOnlyObservableCollection<IWizardPage> readonlyChildren;
+        readonlyChildren = new ReadOnlyObservableCollection<IWizardPage>(children);
 
-        private bool showCustomWarning = false;
+        PropertyChanged += PropertyChangedHandler;
 
-        private int selectedDecoderIndex;
-
-        private IWizardPage customPage = null;
-
-        public MessageFormatPage()
+        DecodingStyles = new List<string>
         {
-            InitializeComponent();
-            DataContext = this;
+            "nLog default message format decoder",
+            "Custom",
+        };
+    }
 
-            readonlyChildren = new ReadOnlyObservableCollection<IWizardPage>(children);
+    public event PropertyChangedEventHandler PropertyChanged;
 
-            PropertyChanged += PropertyChangedHandler;
+    public IEnumerable<string> DecodingStyles { get; private set; }
 
-            DecodingStyles = new List<string>
+    public int SelectedDecoderIndex
+    {
+        get => selectedDecoderIndex;
+        set
+        {
+            if (selectedDecoderIndex != value)
             {
-                "nLog default message format decoder",
-                "Custom",
-            };
+                selectedDecoderIndex = value;
+                OnPropertyChanged(nameof(SelectedDecoderIndex));
+            }
         }
+    }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+    public bool ShowCustomWarning
+    {
+        get => showCustomWarning;
 
-        public IEnumerable<string> DecodingStyles { get; private set; }
-
-        public int SelectedDecoderIndex
+        private set
         {
-            get => selectedDecoderIndex;
-            set
+            if (showCustomWarning != value)
             {
-                if (selectedDecoderIndex != value)
-                {
-                    selectedDecoderIndex = value;
-                    OnPropertyChanged(nameof(SelectedDecoderIndex));
-                }
+                showCustomWarning = value;
+                OnPropertyChanged(nameof(ShowCustomWarning));
+            }
+        }
+    }
+
+    public string Title => "Message Part Identification";
+
+    public ReadOnlyObservableCollection<IWizardPage> Children => readonlyChildren;
+
+    public string Description => "Define how the entries in the log file are categorised.";
+
+    public bool IsValid => true;
+
+    public Control PageContent => this;
+
+    protected bool IsCustom => SelectedDecoderIndex == DecodingStyles.Count() - 1;
+
+    public void AddChild(IWizardPage newItem)
+    {
+        children.Add(newItem);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public void RemoveChild(IWizardPage item)
+    {
+        children.Remove(item);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public object Save(object saveData)
+    {
+        Debug.Assert(saveData != null, "Expecting a valid save-data instance");
+        Debug.Assert(saveData is IFileMonitoringProviderSettings, "Should be an IFileMonitoringProviderSettings");
+
+        if (saveData is IFileMonitoringProviderSettings settings)
+        {
+            if (!IsCustom)
+            {
+                settings.MessageDecoder = GetDecoder();
             }
         }
 
-        public bool ShowCustomWarning
-        {
-            get => showCustomWarning;
+        return saveData;
+    }
 
-            private set
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        var e = new PropertyChangedEventArgs(propertyName);
+        handler?.Invoke(this, e);
+    }
+
+    private string GetDecoder()
+    {
+        switch (SelectedDecoderIndex)
+        {
+            case 0:
+                return "^(?<DateTime>[^|]+)\\|(?<Type>[^|]+)\\|(?<Logger>[^|]+)\\|(?<Description>[^$]*)$";
+            default:
+                throw new NotSupportedException("Custom message formats are not handled on this page.");
+        }
+    }
+
+    private void PropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "SelectedDecoderIndex")
+        {
+            if (IsCustom)
             {
-                if (showCustomWarning != value)
+                if (customPage == null)
                 {
-                    showCustomWarning = value;
-                    OnPropertyChanged(nameof(ShowCustomWarning));
+                    customPage = new CustomMessageDecoderPage();
+                }
+
+                if (!Children.Contains(customPage))
+                {
+                    AddChild(customPage);
+                }
+
+                ShowCustomWarning = true;
+            }
+            else
+            {
+                ShowCustomWarning = false;
+
+                if (Children.Any())
+                {
+                    children.Clear();
+                    OnPropertyChanged(nameof(Children));
                 }
             }
         }
+    }
 
-        public string Title => "Message Part Identification";
-
-        public ReadOnlyObservableCollection<IWizardPage> Children => readonlyChildren;
-
-        public string Description => "Define how the entries in the log file are categorised.";
-
-        public bool IsValid => true;
-
-        public Control PageContent => this;
-
-        protected bool IsCustom => SelectedDecoderIndex == DecodingStyles.Count() - 1;
-
-        public void AddChild(IWizardPage newItem)
-        {
-            children.Add(newItem);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public void RemoveChild(IWizardPage item)
-        {
-            children.Remove(item);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public object Save(object saveData)
-        {
-            Debug.Assert(saveData != null, "Expecting a valid save-data instance");
-            Debug.Assert(saveData is IFileMonitoringProviderSettings, "Should be an IFileMonitoringProviderSettings");
-
-            if (saveData is IFileMonitoringProviderSettings settings)
-            {
-                if (!IsCustom)
-                {
-                    settings.MessageDecoder = GetDecoder();
-                }
-            }
-
-            return saveData;
-        }
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            var e = new PropertyChangedEventArgs(propertyName);
-            handler?.Invoke(this, e);
-        }
-
-        private string GetDecoder()
-        {
-            switch (SelectedDecoderIndex)
-            {
-                case 0:
-                    return "^(?<DateTime>[^|]+)\\|(?<Type>[^|]+)\\|(?<Logger>[^|]+)\\|(?<Description>[^$]*)$";
-                default:
-                    throw new NotSupportedException("Custom message formats are not handled on this page.");
-            }
-        }
-
-        private void PropertyChangedHandler(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "SelectedDecoderIndex")
-            {
-                if (IsCustom)
-                {
-                    if (customPage == null)
-                    {
-                        customPage = new CustomMessageDecoderPage();
-                    }
-
-                    if (!Children.Contains(customPage))
-                    {
-                        AddChild(customPage);
-                    }
-
-                    ShowCustomWarning = true;
-                }
-                else
-                {
-                    ShowCustomWarning = false;
-
-                    if (Children.Any())
-                    {
-                        children.Clear();
-                        OnPropertyChanged(nameof(Children));
-                    }
-                }
-            }
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            // Trigger the validation on these fields (work around a WPF 3.x issue).
-            OnPropertyChanged(nameof(SelectedDecoderIndex));
-        }
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Trigger the validation on these fields (work around a WPF 3.x issue).
+        OnPropertyChanged(nameof(SelectedDecoderIndex));
     }
 }

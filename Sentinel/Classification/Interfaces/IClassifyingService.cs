@@ -1,28 +1,27 @@
-namespace Sentinel.Classification.Interfaces
+namespace Sentinel.Classification.Interfaces;
+
+using System.Collections.ObjectModel;
+using System.Runtime.Serialization;
+using System.Windows.Input;
+
+using Sentinel.Interfaces;
+
+public interface IClassifyingService<T>
 {
-    using System.Collections.ObjectModel;
-    using System.Runtime.Serialization;
-    using System.Windows.Input;
+    ICommand Add { get; }
 
-    using Sentinel.Interfaces;
+    ICommand Edit { get; }
 
-    public interface IClassifyingService<T>
-    {
-        ICommand Add { get; }
+    [DataMember]
+    ObservableCollection<T> Classifiers { get; }
 
-        ICommand Edit { get; }
+    ICommand OrderEarlier { get; }
 
-        [DataMember]
-        ObservableCollection<T> Classifiers { get; }
+    ICommand OrderLater { get; }
 
-        ICommand OrderEarlier { get; }
+    ICommand Remove { get; }
 
-        ICommand OrderLater { get; }
+    int SelectedIndex { get; set; }
 
-        ICommand Remove { get; }
-
-        int SelectedIndex { get; set; }
-
-        ILogEntry Classify(ILogEntry entry);
-    }
+    ILogEntry Classify(ILogEntry entry);
 }

@@ -1,72 +1,71 @@
-namespace Sentinel.Images
+namespace Sentinel.Images;
+
+using WpfExtras;
+
+public class ImageTypeRecord : ViewModelBase
 {
-    using WpfExtras;
+    private string name;
 
-    public class ImageTypeRecord : ViewModelBase
+    private ImageQuality quality;
+
+    private string image;
+
+    public ImageTypeRecord(string name, ImageQuality quality, string image)
     {
-        private string name;
+        this.name = name;
+        this.quality = quality;
+        this.image = image;
 
-        private ImageQuality quality;
+        DisplayName = name;
+    }
 
-        private string image;
-
-        public ImageTypeRecord(string name, ImageQuality quality, string image)
+    public string Name
+    {
+        get
         {
-            this.name = name;
-            this.quality = quality;
-            this.image = image;
-
-            DisplayName = name;
+            return name;
         }
 
-        public string Name
+        set
         {
-            get
+            if (name != value)
             {
-                return name;
-            }
-
-            set
-            {
-                if (name != value)
-                {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
-                }
+                name = value;
+                OnPropertyChanged(nameof(Name));
             }
         }
+    }
 
-        public ImageQuality Quality
+    public ImageQuality Quality
+    {
+        get
         {
-            get
-            {
-                return quality;
-            }
-
-            set
-            {
-                if (quality != value)
-                {
-                    quality = value;
-                    OnPropertyChanged(nameof(Quality));
-                }
-            }
+            return quality;
         }
 
-        public string Image
+        set
         {
-            get
+            if (quality != value)
             {
-                return image;
+                quality = value;
+                OnPropertyChanged(nameof(Quality));
             }
+        }
+    }
 
-            set
+    public string Image
+    {
+        get
+        {
+            return image;
+        }
+
+        set
+        {
+            if (image != value)
             {
-                if (image != value)
-                {
-                    image = value;
-                    OnPropertyChanged(nameof(Image));
-                }
+                image = value;
+                OnPropertyChanged(nameof(Image));
             }
         }
     }

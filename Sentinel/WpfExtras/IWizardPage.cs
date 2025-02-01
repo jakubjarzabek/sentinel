@@ -1,27 +1,26 @@
-﻿namespace Sentinel.WpfExtras
+﻿namespace Sentinel.WpfExtras;
+
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Controls;
+
+public interface IWizardPage
+    : INotifyPropertyChanged
 {
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Windows.Controls;
+    ReadOnlyObservableCollection<IWizardPage> Children { get; }
 
-    public interface IWizardPage
-        : INotifyPropertyChanged
-    {
-        ReadOnlyObservableCollection<IWizardPage> Children { get; }
+    string Description { get; }
 
-        string Description { get; }
+    bool IsValid { get; }
 
-        bool IsValid { get; }
+    Control PageContent { get; }
 
-        Control PageContent { get; }
+    string Title { get; }
 
-        string Title { get; }
+    // Hierarchical Support.
+    void AddChild(IWizardPage child);
 
-        // Hierarchical Support.
-        void AddChild(IWizardPage child);
+    void RemoveChild(IWizardPage child);
 
-        void RemoveChild(IWizardPage child);
-
-        object Save(object saveData);
-    }
+    object Save(object saveData);
 }

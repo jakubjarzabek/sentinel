@@ -1,15 +1,14 @@
-namespace Sentinel.NLog
+namespace Sentinel.NLog;
+
+using System.Runtime.Serialization;
+
+using Sentinel.Interfaces.Providers;
+
+public interface INLogAppenderSettings : IProviderSettings
 {
-    using System.Runtime.Serialization;
+    [DataMember]
+    NetworkProtocol Protocol { get; set; }
 
-    using Sentinel.Interfaces.Providers;
-
-    public interface INLogAppenderSettings : IProviderSettings
-    {
-        [DataMember]
-        NetworkProtocol Protocol { get; set; }
-
-        [DataMember]
-        int Port { get; set; }
-    }
+    [DataMember]
+    int Port { get; set; }
 }

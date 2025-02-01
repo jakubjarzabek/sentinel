@@ -1,7 +1,6 @@
-﻿namespace Sentinel.Interfaces
+﻿namespace Sentinel.Interfaces;
+
+public interface IDefaultInitialisation
 {
-    public interface IDefaultInitialisation
-    {
-        void Initialise();
-    }
+    void Initialise();
 }

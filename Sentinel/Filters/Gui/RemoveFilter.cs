@@ -1,32 +1,31 @@
-namespace Sentinel.Filters.Gui
+namespace Sentinel.Filters.Gui;
+
+using System.Windows;
+
+using Sentinel.Filters.Interfaces;
+using Sentinel.Services;
+
+public class RemoveFilter : IRemoveFilterService
 {
-    using System.Windows;
-
-    using Sentinel.Filters.Interfaces;
-    using Sentinel.Services;
-
-    public class RemoveFilter : IRemoveFilterService
+    public void Remove(IFilter filter)
     {
-        public void Remove(IFilter filter)
+        var service = ServiceLocator.Instance.Get<IFilteringService<IFilter>>();
+
+        if (service != null)
         {
-            var service = ServiceLocator.Instance.Get<IFilteringService<IFilter>>();
+            var prompt = "Are you sure you want to remove the selected filter?\r\n\r\n" +
+                         $"Filter Name = \"{filter.Name}\"";
 
-            if (service != null)
+            var result = MessageBox.Show(
+                prompt,
+                "Remove Filter",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question,
+                MessageBoxResult.No);
+
+            if (result == MessageBoxResult.Yes)
             {
-                var prompt = "Are you sure you want to remove the selected filter?\r\n\r\n" +
-                                $"Filter Name = \"{filter.Name}\"";
-
-                var result = MessageBox.Show(
-                    prompt,
-                    "Remove Filter",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question,
-                    MessageBoxResult.No);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    service.Filters.Remove(filter);
-                }
+                service.Filters.Remove(filter);
             }
         }
     }

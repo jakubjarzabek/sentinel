@@ -1,378 +1,377 @@
-﻿namespace Sentinel.Log4Net
+﻿namespace Sentinel.Log4Net;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using log4net;
+using Sentinel.Interfaces;
+using Sentinel.Interfaces.CodeContracts;
+using Sentinel.Interfaces.Providers;
+
+public class Log4NetProvider : INetworkProvider
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using System.Xml.Linq;
-    using log4net;
-    using Sentinel.Interfaces;
-    using Sentinel.Interfaces.CodeContracts;
-    using Sentinel.Interfaces.Providers;
+    public static readonly IProviderRegistrationRecord ProviderRegistrationInformation =
+        new ProviderRegistrationInformation(new ProviderInfo());
 
-    public class Log4NetProvider : INetworkProvider
+    private const int PumpFrequency = 100;
+
+    private const string ApacheNamespace = "http://logging.apache.org/log4net/schemas/log4net-events-1.2/";
+
+    private static readonly ILog Log = LogManager.GetLogger(typeof(Log4NetProvider));
+
+    private readonly Queue<string> pendingQueue = new Queue<string>();
+
+    private readonly IUdpAppenderListenerSettings udpSettings;
+
+    private readonly XNamespace log4NetNamespace = "unique";
+
+    private readonly XNamespace apacheNamespace = ApacheNamespace;
+
+    private CancellationTokenSource cancellationTokenSource;
+
+    private Task udpListenerTask;
+
+    private Task messagePumpTask;
+
+    public Log4NetProvider(IProviderSettings settings)
     {
-        public static readonly IProviderRegistrationRecord ProviderRegistrationInformation =
-            new ProviderRegistrationInformation(new ProviderInfo());
+        settings.ThrowIfNull(nameof(settings));
 
-        private const int PumpFrequency = 100;
+        udpSettings = settings as IUdpAppenderListenerSettings;
+        udpSettings.ThrowIfNull(nameof(udpSettings));
 
-        private const string ApacheNamespace = "http://logging.apache.org/log4net/schemas/log4net-events-1.2/";
+        Information = ProviderRegistrationInformation.Info;
+        ProviderSettings = udpSettings;
+    }
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Log4NetProvider));
+    public IProviderInfo Information { get; private set; }
 
-        private readonly Queue<string> pendingQueue = new Queue<string>();
+    public IProviderSettings ProviderSettings { get; private set; }
 
-        private readonly IUdpAppenderListenerSettings udpSettings;
+    public ILogger Logger { get; set; }
 
-        private readonly XNamespace log4NetNamespace = "unique";
+    public string Name { get; set; }
 
-        private readonly XNamespace apacheNamespace = ApacheNamespace;
+    public bool IsActive => udpListenerTask != null && udpListenerTask.Status == TaskStatus.Running;
 
-        private CancellationTokenSource cancellationTokenSource;
+    public int Port { get; private set; }
 
-        private Task udpListenerTask;
+    public void Start()
+    {
+        Log.Debug("Start requested");
 
-        private Task messagePumpTask;
-
-        public Log4NetProvider(IProviderSettings settings)
+        if (udpListenerTask == null || udpListenerTask.IsCompleted)
         {
-            settings.ThrowIfNull(nameof(settings));
+            cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
 
-            udpSettings = settings as IUdpAppenderListenerSettings;
-            udpSettings.ThrowIfNull(nameof(udpSettings));
+            udpListenerTask = Task.Factory.StartNew(SocketListener, token);
+            messagePumpTask = Task.Factory.StartNew(MessagePump, token);
+        }
+        else
+        {
+            Log.Warn("UDP listener task is already active and can not be started again.");
+        }
+    }
 
-            Information = ProviderRegistrationInformation.Info;
-            ProviderSettings = udpSettings;
+    public void Pause()
+    {
+        Log.Debug("Pause requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
+        {
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
+        }
+    }
+
+    public void Close()
+    {
+        Log.Debug("Close requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
+        {
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
+        }
+    }
+
+    private void SocketListener()
+    {
+        Log.Debug("SocketListener started");
+
+        if (udpSettings == null)
+        {
+            Log.Error("UDP settings has not been initialized");
+            throw new NullReferenceException();
         }
 
-        public IProviderInfo Information { get; private set; }
-
-        public IProviderSettings ProviderSettings { get; private set; }
-
-        public ILogger Logger { get; set; }
-
-        public string Name { get; set; }
-
-        public bool IsActive => udpListenerTask != null && udpListenerTask.Status == TaskStatus.Running;
-
-        public int Port { get; private set; }
-
-        public void Start()
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("Start requested");
+            var endPoint = new IPEndPoint(IPAddress.Any, udpSettings.Port);
 
-            if (udpListenerTask == null || udpListenerTask.IsCompleted)
+            using (var listener = new UdpClient(endPoint))
             {
-                cancellationTokenSource = new CancellationTokenSource();
-                var token = cancellationTokenSource.Token;
+                var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                listener.Client.ReceiveTimeout = 1000;
 
-                udpListenerTask = Task.Factory.StartNew(SocketListener, token);
-                messagePumpTask = Task.Factory.StartNew(MessagePump, token);
-            }
-            else
-            {
-                Log.Warn("UDP listener task is already active and can not be started again.");
-            }
-        }
-
-        public void Pause()
-        {
-            Log.Debug("Pause requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
-        }
-
-        public void Close()
-        {
-            Log.Debug("Close requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
-        }
-
-        private void SocketListener()
-        {
-            Log.Debug("SocketListener started");
-
-            if (udpSettings == null)
-            {
-                Log.Error("UDP settings has not been initialized");
-                throw new NullReferenceException();
-            }
-
-            while (!cancellationTokenSource.IsCancellationRequested)
-            {
-                var endPoint = new IPEndPoint(IPAddress.Any, udpSettings.Port);
-
-                using (var listener = new UdpClient(endPoint))
+                while (!cancellationTokenSource.IsCancellationRequested)
                 {
-                    var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    listener.Client.ReceiveTimeout = 1000;
-
-                    while (!cancellationTokenSource.IsCancellationRequested)
+                    try
                     {
-                        try
-                        {
-                            var bytes = listener.Receive(ref remoteEndPoint);
+                        var bytes = listener.Receive(ref remoteEndPoint);
 
-                            if (Log.IsDebugEnabled)
-                                Log.DebugFormat("Received {0} bytes from {1}", bytes.Length, remoteEndPoint.Address);
+                        if (Log.IsDebugEnabled)
+                            Log.DebugFormat("Received {0} bytes from {1}", bytes.Length, remoteEndPoint.Address);
 
-                            var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            lock (pendingQueue)
-                            {
-                                pendingQueue.Enqueue(message);
-                            }
-                        }
-                        catch (SocketException socketException)
+                        var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                        lock (pendingQueue)
                         {
-                            if (socketException.SocketErrorCode != SocketError.TimedOut)
-                            {
-                                Log.Error("SocketException", socketException);
-                                Log.DebugFormat(
-                                    "SocketException.SocketErrorCode = {0}",
-                                    socketException.SocketErrorCode);
+                            pendingQueue.Enqueue(message);
+                        }
+                    }
+                    catch (SocketException socketException)
+                    {
+                        if (socketException.SocketErrorCode != SocketError.TimedOut)
+                        {
+                            Log.Error("SocketException", socketException);
+                            Log.DebugFormat(
+                                "SocketException.SocketErrorCode = {0}",
+                                socketException.SocketErrorCode);
 
-                                // Break out of the 'using socket' loop and try to establish a new socket.
-                                break;
-                            }
+                            // Break out of the 'using socket' loop and try to establish a new socket.
+                            break;
                         }
-                        catch (Exception e)
-                        {
-                            Log.Error("UdpClient Exception", e);
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("UdpClient Exception", e);
                     }
                 }
             }
-
-            Log.Debug("SocketListener completed");
         }
 
-        private void MessagePump()
+        Log.Debug("SocketListener completed");
+    }
+
+    private void MessagePump()
+    {
+        Log.Debug("MessagePump started");
+
+        var processedQueue = new Queue<ILogEntry>();
+
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("MessagePump started");
+            Thread.Sleep(PumpFrequency);
 
-            var processedQueue = new Queue<ILogEntry>();
-
-            while (!cancellationTokenSource.IsCancellationRequested)
+            try
             {
-                Thread.Sleep(PumpFrequency);
-
-                try
+                if (Logger != null)
                 {
-                    if (Logger != null)
+                    lock (pendingQueue)
                     {
-                        lock (pendingQueue)
+                        while (pendingQueue.Count > 0)
                         {
-                            while (pendingQueue.Count > 0)
+                            var message = pendingQueue.Dequeue();
+
+                            // TODO: validate
+                            if (IsValidMessage(message))
                             {
-                                var message = pendingQueue.Dequeue();
+                                var deserializedMessage = DeserializeMessage(message);
 
-                                // TODO: validate
-                                if (IsValidMessage(message))
+                                if (deserializedMessage != null)
                                 {
-                                    var deserializedMessage = DeserializeMessage(message);
-
-                                    if (deserializedMessage != null)
-                                    {
-                                        processedQueue.Enqueue(deserializedMessage);
-                                    }
+                                    processedQueue.Enqueue(deserializedMessage);
                                 }
                             }
                         }
-
-                        if (processedQueue.Any())
-                        {
-                            Logger.AddBatch(processedQueue);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Error("MessagePump Exception", e);
-                }
-                finally
-                {
-                    processedQueue.Clear();
-                }
-            }
-
-            Log.Debug("MessagePump completed");
-        }
-
-        private ILogEntry DeserializeMessage(string message)
-        {
-            try
-            {
-                // Record the current date/time
-                var receivedTime = DateTime.UtcNow;
-
-                var payload = $@"<entry xmlns:log4net=""{log4NetNamespace}"">{message}</entry>";
-                var element = XElement.Parse(payload);
-
-                var eventNamespace = payload.Contains(ApacheNamespace) ? apacheNamespace : log4NetNamespace;
-
-                var @event = element.Element(eventNamespace + "event");
-
-                // Establish whether a sub-system seems to be defined.
-                if (@event != null)
-                {
-                    var description = @event.Element(eventNamespace + "message")?.Value;
-
-                    var classification = string.Empty;
-                    var system = @event.GetAttribute("logger", string.Empty);
-                    var type = @event.GetAttribute("level", string.Empty);
-                    var host = string.Empty;
-                    var props = new Dictionary<string, object>();
-                    foreach (var propertyElement in @event.Element(eventNamespace + "properties")?.Elements() ?? Enumerable.Empty<XElement>())
-                    {
-                        if (propertyElement.Name == eventNamespace + "data")
-                        {
-                            var name = propertyElement.GetAttribute("name", string.Empty);
-                            var value = propertyElement.GetAttribute("value", string.Empty);
-
-                            switch (name)
-                            {
-                                case "log4net:HostName":
-                                    host = value;
-                                    break;
-                                default:
-                                    if (props.ContainsKey(name))
-                                    {
-                                        props[name] = value;
-                                    }
-                                    else
-                                    {
-                                        props.Add(name, value);
-                                    }
-
-                                    break;
-                            }
-                        }
                     }
 
-                    var className = string.Empty;
-                    var methodName = string.Empty;
-                    var sourceFile = string.Empty;
-                    var line = string.Empty;
-
-                    // Any source information
-                    var source = @event.Element(eventNamespace + "locationInfo");
-                    if (source != null)
+                    if (processedQueue.Any())
                     {
-                        className = source.Attribute("class")?.Value;
-                        methodName = source.Attribute("method")?.Value;
-                        sourceFile = source.Attribute("file")?.Value;
-                        line = source.Attribute("line")?.Value;
+                        Logger.AddBatch(processedQueue);
                     }
-
-                    var metaData = new Dictionary<string, object>
-                    {
-                        ["Classification"] = classification,
-                        ["Host"] = host,
-                    };
-
-                    foreach (var prop in props)
-                    {
-                        if (metaData.ContainsKey(prop.Key))
-                        {
-                            Log.Warn($"Already have property of {prop.Key}, overwriting");
-                            metaData[prop.Key] = prop.Value;
-                        }
-                        else
-                        {
-                            metaData.Add(prop.Key, prop.Value);
-                        }
-                    }
-
-                    AddExceptionIfFound(@event, metaData, eventNamespace);
-
-                    // Extract from the source the originating date/time
-                    var sourceTime = @event.GetAttributeDateTime("timestamp", DateTime.Now);
-
-                    var logEntry = new LogEntry
-                                       {
-                                           DateTime = sourceTime,
-                                           System = system,
-                                           Thread = @event.GetAttribute("thread", string.Empty),
-                                           Description = description,
-                                           Type = type,
-                                           MetaData = metaData,
-                                       };
-
-                    // Determine whether this constitutes an exception
-                    var throwable = @event.Element(eventNamespace + "throwable");
-                    if (throwable != null)
-                    {
-                        logEntry.MetaData.Add("Exception", throwable.Value);
-                    }
-                    else if (logEntry.Description.ToUpper().Contains("EXCEPTION"))
-                    {
-                        logEntry.MetaData.Add("Exception", true);
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(className))
-                    {
-                        // TODO: use an object for these?
-                        logEntry.MetaData.Add("ClassName", className);
-                        logEntry.MetaData.Add("MethodName", methodName);
-                        logEntry.MetaData.Add("SourceFile", sourceFile);
-                        logEntry.MetaData.Add("SourceLine", line);
-                    }
-
-                    logEntry.MetaData.Add("ReceivedTime", receivedTime);
-
-                    return logEntry;
                 }
             }
             catch (Exception e)
             {
-                Log.Error("DeserializeMessage: exception when processing incoming message", e);
+                Log.Error("MessagePump Exception", e);
             }
-
-            return null;
-        }
-
-        private void AddExceptionIfFound(XElement entryEvent, Dictionary<string, object> metaData, XNamespace @namespace)
-        {
-            entryEvent.ThrowIfNull(nameof(entryEvent));
-
-            metaData.ThrowIfNull(nameof(metaData));
-
-            var exceptionElement = entryEvent.Element(@namespace + "exception");
-            if (exceptionElement != null)
+            finally
             {
-                metaData["Exception"] = exceptionElement.Value;
+                processedQueue.Clear();
             }
         }
 
-        private bool IsValidMessage(string message)
+        Log.Debug("MessagePump completed");
+    }
+
+    private ILogEntry DeserializeMessage(string message)
+    {
+        try
         {
-            if (string.IsNullOrWhiteSpace(message))
+            // Record the current date/time
+            var receivedTime = DateTime.UtcNow;
+
+            var payload = $@"<entry xmlns:log4net=""{log4NetNamespace}"">{message}</entry>";
+            var element = XElement.Parse(payload);
+
+            var eventNamespace = payload.Contains(ApacheNamespace) ? apacheNamespace : log4NetNamespace;
+
+            var @event = element.Element(eventNamespace + "event");
+
+            // Establish whether a sub-system seems to be defined.
+            if (@event != null)
             {
-                throw new ArgumentNullException(nameof(message));
+                var description = @event.Element(eventNamespace + "message")?.Value;
+
+                var classification = string.Empty;
+                var system = @event.GetAttribute("logger", string.Empty);
+                var type = @event.GetAttribute("level", string.Empty);
+                var host = string.Empty;
+                var props = new Dictionary<string, object>();
+                foreach (var propertyElement in @event.Element(eventNamespace + "properties")?.Elements() ?? Enumerable.Empty<XElement>())
+                {
+                    if (propertyElement.Name == eventNamespace + "data")
+                    {
+                        var name = propertyElement.GetAttribute("name", string.Empty);
+                        var value = propertyElement.GetAttribute("value", string.Empty);
+
+                        switch (name)
+                        {
+                            case "log4net:HostName":
+                                host = value;
+                                break;
+                            default:
+                                if (props.ContainsKey(name))
+                                {
+                                    props[name] = value;
+                                }
+                                else
+                                {
+                                    props.Add(name, value);
+                                }
+
+                                break;
+                        }
+                    }
+                }
+
+                var className = string.Empty;
+                var methodName = string.Empty;
+                var sourceFile = string.Empty;
+                var line = string.Empty;
+
+                // Any source information
+                var source = @event.Element(eventNamespace + "locationInfo");
+                if (source != null)
+                {
+                    className = source.Attribute("class")?.Value;
+                    methodName = source.Attribute("method")?.Value;
+                    sourceFile = source.Attribute("file")?.Value;
+                    line = source.Attribute("line")?.Value;
+                }
+
+                var metaData = new Dictionary<string, object>
+                {
+                    ["Classification"] = classification,
+                    ["Host"] = host,
+                };
+
+                foreach (var prop in props)
+                {
+                    if (metaData.ContainsKey(prop.Key))
+                    {
+                        Log.Warn($"Already have property of {prop.Key}, overwriting");
+                        metaData[prop.Key] = prop.Value;
+                    }
+                    else
+                    {
+                        metaData.Add(prop.Key, prop.Value);
+                    }
+                }
+
+                AddExceptionIfFound(@event, metaData, eventNamespace);
+
+                // Extract from the source the originating date/time
+                var sourceTime = @event.GetAttributeDateTime("timestamp", DateTime.Now);
+
+                var logEntry = new LogEntry
+                {
+                    DateTime = sourceTime,
+                    System = system,
+                    Thread = @event.GetAttribute("thread", string.Empty),
+                    Description = description,
+                    Type = type,
+                    MetaData = metaData,
+                };
+
+                // Determine whether this constitutes an exception
+                var throwable = @event.Element(eventNamespace + "throwable");
+                if (throwable != null)
+                {
+                    logEntry.MetaData.Add("Exception", throwable.Value);
+                }
+                else if (logEntry.Description.ToUpper().Contains("EXCEPTION"))
+                {
+                    logEntry.MetaData.Add("Exception", true);
+                }
+
+                if (!string.IsNullOrWhiteSpace(className))
+                {
+                    // TODO: use an object for these?
+                    logEntry.MetaData.Add("ClassName", className);
+                    logEntry.MetaData.Add("MethodName", methodName);
+                    logEntry.MetaData.Add("SourceFile", sourceFile);
+                    logEntry.MetaData.Add("SourceLine", line);
+                }
+
+                logEntry.MetaData.Add("ReceivedTime", receivedTime);
+
+                return logEntry;
             }
-
-            return message.StartsWith("<log4net:event");
         }
-
-        internal class ProviderInfo : IProviderInfo
+        catch (Exception e)
         {
-            public Guid Identifier => new Guid("D19E8097-FC08-47AF-8418-F737168A9645");
-
-            public string Name => "Log4Net UdpAppender Provider";
-
-            public string Description => "Handler for the remote side of log4net's UdpAppender";
+            Log.Error("DeserializeMessage: exception when processing incoming message", e);
         }
+
+        return null;
+    }
+
+    private void AddExceptionIfFound(XElement entryEvent, Dictionary<string, object> metaData, XNamespace @namespace)
+    {
+        entryEvent.ThrowIfNull(nameof(entryEvent));
+
+        metaData.ThrowIfNull(nameof(metaData));
+
+        var exceptionElement = entryEvent.Element(@namespace + "exception");
+        if (exceptionElement != null)
+        {
+            metaData["Exception"] = exceptionElement.Value;
+        }
+    }
+
+    private bool IsValidMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentNullException(nameof(message));
+        }
+
+        return message.StartsWith("<log4net:event");
+    }
+
+    internal class ProviderInfo : IProviderInfo
+    {
+        public Guid Identifier => new Guid("D19E8097-FC08-47AF-8418-F737168A9645");
+
+        public string Name => "Log4Net UdpAppender Provider";
+
+        public string Description => "Handler for the remote side of log4net's UdpAppender";
     }
 }

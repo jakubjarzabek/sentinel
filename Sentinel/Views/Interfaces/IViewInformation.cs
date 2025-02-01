@@ -1,11 +1,10 @@
-﻿namespace Sentinel.Views.Interfaces
+﻿namespace Sentinel.Views.Interfaces;
+
+public interface IViewInformation
 {
-    public interface IViewInformation
-    {
-        string Identifier { get; }
+    string Identifier { get; }
 
-        string Name { get; }
+    string Name { get; }
 
-        string Description { get; }
-    }
+    string Description { get; }
 }

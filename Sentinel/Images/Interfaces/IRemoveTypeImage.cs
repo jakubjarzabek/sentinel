@@ -1,7 +1,6 @@
-namespace Sentinel.Images.Interfaces
+namespace Sentinel.Images.Interfaces;
+
+public interface IRemoveTypeImage
 {
-    public interface IRemoveTypeImage
-    {
-        void Remove(ImageTypeRecord imageTypeRecord);
-    }
+    void Remove(ImageTypeRecord imageTypeRecord);
 }

@@ -1,12 +1,11 @@
-namespace Sentinel.Support.Converters
-{
-    using Sentinel.Images;
+namespace Sentinel.Support.Converters;
 
-    public class TypeToSmallImageConverter : TypeToImageConverter
+using Sentinel.Images;
+
+public class TypeToSmallImageConverter : TypeToImageConverter
+{
+    public TypeToSmallImageConverter()
     {
-        public TypeToSmallImageConverter()
-        {
-            Quality = ImageQuality.Small;
-        }
+        Quality = ImageQuality.Small;
     }
 }

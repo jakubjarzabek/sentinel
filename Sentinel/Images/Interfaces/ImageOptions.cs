@@ -1,11 +1,10 @@
-namespace Sentinel.Images.Interfaces
+namespace Sentinel.Images.Interfaces;
+
+public class ImageOptions
 {
-    public class ImageOptions
-    {
-        public ImageQuality Quality { get; set; } = ImageQuality.BestAvailable;
+    public ImageQuality Quality { get; set; } = ImageQuality.BestAvailable;
 
-        public bool AcceptLowerQuality { get; set; } = true;
+    public bool AcceptLowerQuality { get; set; } = true;
 
-        public bool ImageMustExist { get; set; } = false;
-    }
+    public bool ImageMustExist { get; set; } = false;
 }

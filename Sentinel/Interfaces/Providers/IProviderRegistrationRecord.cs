@@ -1,15 +1,14 @@
-﻿namespace Sentinel.Interfaces.Providers
+﻿namespace Sentinel.Interfaces.Providers;
+
+using System;
+
+public interface IProviderRegistrationRecord
 {
-    using System;
+    Guid Identifier { get; }
 
-    public interface IProviderRegistrationRecord
-    {
-        Guid Identifier { get; }
+    IProviderInfo Info { get; }
 
-        IProviderInfo Info { get; }
+    Type Settings { get; }
 
-        Type Settings { get; }
-
-        Type Implementer { get; }
-    }
+    Type Implementer { get; }
 }

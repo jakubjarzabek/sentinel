@@ -1,15 +1,14 @@
-﻿namespace Sentinel.Filters.Gui
-{
-    using System.Windows;
+﻿namespace Sentinel.Filters.Gui;
 
-    /// <summary>
-    /// Interaction logic for AddEditFilterWindow.xaml.
-    /// </summary>
-    public partial class AddEditFilterWindow : Window
+using System.Windows;
+
+/// <summary>
+/// Interaction logic for AddEditFilterWindow.xaml.
+/// </summary>
+public partial class AddEditFilterWindow : Window
+{
+    public AddEditFilterWindow()
     {
-        public AddEditFilterWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

@@ -1,11 +1,10 @@
-namespace Sentinel.Interfaces
+namespace Sentinel.Interfaces;
+
+using System.Windows.Media;
+
+public interface IHighlighterStyle
 {
-    using System.Windows.Media;
+    Color? Background { get; set; }
 
-    public interface IHighlighterStyle
-    {
-        Color? Background { get; set; }
-
-        Color? Foreground { get; set; }
-    }
+    Color? Foreground { get; set; }
 }

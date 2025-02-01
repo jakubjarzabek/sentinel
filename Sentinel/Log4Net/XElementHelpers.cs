@@ -1,44 +1,43 @@
-namespace Sentinel.Log4Net
+namespace Sentinel.Log4Net;
+
+using System;
+using System.Globalization;
+using System.Xml.Linq;
+
+using log4net;
+using Sentinel.Interfaces;
+using Sentinel.Interfaces.CodeContracts;
+
+public static class XElementHelpers
 {
-    using System;
-    using System.Globalization;
-    using System.Xml.Linq;
+    private static readonly ILog Log = LogManager.GetLogger("XElementHelpers");
 
-    using log4net;
-    using Sentinel.Interfaces;
-    using Sentinel.Interfaces.CodeContracts;
-
-    public static class XElementHelpers
+    public static string GetAttribute(this XElement element, string attributeName, string defaultValue)
     {
-        private static readonly ILog Log = LogManager.GetLogger("XElementHelpers");
+        element.ThrowIfNull(nameof(element));
 
-        public static string GetAttribute(this XElement element, string attributeName, string defaultValue)
+        if (!element.HasAttributes)
         {
-            element.ThrowIfNull(nameof(element));
-
-            if (!element.HasAttributes)
-            {
-                return defaultValue;
-            }
-
-            var value = element.Attribute(attributeName);
-            return value?.Value ?? defaultValue;
+            return defaultValue;
         }
 
-        public static DateTime GetAttributeDateTime(this XElement element, string attributeName, DateTime defaultValue)
+        var value = element.Attribute(attributeName);
+        return value?.Value ?? defaultValue;
+    }
+
+    public static DateTime GetAttributeDateTime(this XElement element, string attributeName, DateTime defaultValue)
+    {
+        var value = element.GetAttribute(attributeName, string.Empty);
+
+        var result = defaultValue;
+        if (!string.IsNullOrWhiteSpace(value))
         {
-            var value = element.GetAttribute(attributeName, string.Empty);
-
-            var result = defaultValue;
-            if (!string.IsNullOrWhiteSpace(value))
+            if (!DateTime.TryParse(value, null, DateTimeStyles.AdjustToUniversal, out result))
             {
-                if (!DateTime.TryParse(value, null, DateTimeStyles.AdjustToUniversal, out result))
-                {
-                    Log.Warn($"Unable to parse DateTime of '{value}' to a valid date");
-                }
+                Log.Warn($"Unable to parse DateTime of '{value}' to a valid date");
             }
-
-            return result;
         }
+
+        return result;
     }
 }

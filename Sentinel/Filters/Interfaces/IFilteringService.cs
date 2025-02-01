@@ -1,17 +1,16 @@
-namespace Sentinel.Filters.Interfaces
+namespace Sentinel.Filters.Interfaces;
+
+using System.Collections.ObjectModel;
+using System.Runtime.Serialization;
+
+using Sentinel.Interfaces;
+
+public interface IFilteringService<T>
 {
-    using System.Collections.ObjectModel;
-    using System.Runtime.Serialization;
+    [DataMember]
+    ObservableCollection<T> Filters { get; set; }
 
-    using Sentinel.Interfaces;
+    ObservableCollection<T> SearchFilters { get; set; }
 
-    public interface IFilteringService<T>
-    {
-        [DataMember]
-        ObservableCollection<T> Filters { get; set; }
-
-        ObservableCollection<T> SearchFilters { get; set; }
-
-        bool IsFiltered(ILogEntry entry);
-    }
+    bool IsFiltered(ILogEntry entry);
 }

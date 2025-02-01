@@ -1,245 +1,244 @@
-namespace Sentinel.MSBuild
+namespace Sentinel.MSBuild;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using log4net;
+using Newtonsoft.Json.Linq;
+
+using Sentinel.Interfaces;
+using Sentinel.Interfaces.CodeContracts;
+using Sentinel.Interfaces.Providers;
+
+public class MsBuildProvider : INetworkProvider
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using log4net;
-    using Newtonsoft.Json.Linq;
+    public static readonly IProviderRegistrationRecord ProviderRegistrationRecord =
+        new ProviderRegistrationInformation(new ProviderInfo());
 
-    using Sentinel.Interfaces;
-    using Sentinel.Interfaces.CodeContracts;
-    using Sentinel.Interfaces.Providers;
+    private const int PumpFrequency = 100;
 
-    public class MsBuildProvider : INetworkProvider
+    private static readonly ILog Log = LogManager.GetLogger(typeof(MsBuildProvider));
+
+    private readonly Queue<string> pendingQueue = new Queue<string>();
+
+    private CancellationTokenSource cancellationTokenSource;
+
+    private Task listenerTask;
+
+    public MsBuildProvider(IProviderSettings settings)
     {
-        public static readonly IProviderRegistrationRecord ProviderRegistrationRecord =
-            new ProviderRegistrationInformation(new ProviderInfo());
+        settings.ThrowIfNull(nameof(settings));
 
-        private const int PumpFrequency = 100;
+        Settings = settings as IMsBuildListenerSettings;
+        Settings.ThrowIfNull(nameof(Settings));
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(MsBuildProvider));
+        ProviderSettings = settings;
+    }
 
-        private readonly Queue<string> pendingQueue = new Queue<string>();
+    public IProviderInfo Information { get; private set; }
 
-        private CancellationTokenSource cancellationTokenSource;
+    public IProviderSettings ProviderSettings { get; private set; }
 
-        private Task listenerTask;
+    public ILogger Logger { get; set; }
 
-        public MsBuildProvider(IProviderSettings settings)
+    public string Name { get; set; }
+
+    public bool IsActive => listenerTask != null && listenerTask.Status == TaskStatus.Running;
+
+    public int Port { get; private set; }
+
+    protected IMsBuildListenerSettings Settings { get; set; }
+
+    public void Start()
+    {
+        Log.Debug("Start requested");
+
+        if (listenerTask == null || listenerTask.IsCompleted)
         {
-            settings.ThrowIfNull(nameof(settings));
+            cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
 
-            Settings = settings as IMsBuildListenerSettings;
-            Settings.ThrowIfNull(nameof(Settings));
-
-            ProviderSettings = settings;
+            listenerTask = Task.Factory.StartNew(SocketListener, token);
+            Task.Factory.StartNew(MessagePump, token);
         }
-
-        public IProviderInfo Information { get; private set; }
-
-        public IProviderSettings ProviderSettings { get; private set; }
-
-        public ILogger Logger { get; set; }
-
-        public string Name { get; set; }
-
-        public bool IsActive => listenerTask != null && listenerTask.Status == TaskStatus.Running;
-
-        public int Port { get; private set; }
-
-        protected IMsBuildListenerSettings Settings { get; set; }
-
-        public void Start()
+        else
         {
-            Log.Debug("Start requested");
-
-            if (listenerTask == null || listenerTask.IsCompleted)
-            {
-                cancellationTokenSource = new CancellationTokenSource();
-                var token = cancellationTokenSource.Token;
-
-                listenerTask = Task.Factory.StartNew(SocketListener, token);
-                Task.Factory.StartNew(MessagePump, token);
-            }
-            else
-            {
-                Log.Warn("UDP listener task is already active and can not be started again.");
-            }
+            Log.Warn("UDP listener task is already active and can not be started again.");
         }
+    }
 
-        public void Pause()
+    public void Pause()
+    {
+        Log.Debug("Pause requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("Pause requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
         }
+    }
 
-        public void Close()
+    public void Close()
+    {
+        Log.Debug("Close requested");
+        if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("Close requested");
-            if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
-            {
-                Log.Debug("Cancellation token triggered");
-                cancellationTokenSource.Cancel();
-            }
+            Log.Debug("Cancellation token triggered");
+            cancellationTokenSource.Cancel();
         }
+    }
 
-        private void SocketListener()
+    private void SocketListener()
+    {
+        Log.Debug("SocketListener started");
+
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("SocketListener started");
+            var endPoint = new IPEndPoint(IPAddress.Any, 9123);
 
-            while (!cancellationTokenSource.IsCancellationRequested)
+            using (var listener = new UdpClient(endPoint))
             {
-                var endPoint = new IPEndPoint(IPAddress.Any, 9123);
+                var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                listener.Client.ReceiveTimeout = 1000;
 
-                using (var listener = new UdpClient(endPoint))
+                while (!cancellationTokenSource.IsCancellationRequested)
                 {
-                    var remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    listener.Client.ReceiveTimeout = 1000;
-
-                    while (!cancellationTokenSource.IsCancellationRequested)
+                    try
                     {
-                        try
-                        {
-                            var bytes = listener.Receive(ref remoteEndPoint);
+                        var bytes = listener.Receive(ref remoteEndPoint);
 
-                            if (Log.IsDebugEnabled)
-                                Log.DebugFormat("Received {0} bytes from {1}", bytes.Length, remoteEndPoint.Address);
+                        if (Log.IsDebugEnabled)
+                            Log.DebugFormat("Received {0} bytes from {1}", bytes.Length, remoteEndPoint.Address);
 
-                            var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            lock (pendingQueue)
-                            {
-                                pendingQueue.Enqueue(message);
-                            }
-                        }
-                        catch (SocketException socketException)
+                        var message = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                        lock (pendingQueue)
                         {
-                            if (socketException.SocketErrorCode != SocketError.TimedOut)
-                            {
-                                Log.Error("SocketException", socketException);
-                                Log.Debug($"SocketException.SocketErrorCode = {socketException.SocketErrorCode}");
+                            pendingQueue.Enqueue(message);
+                        }
+                    }
+                    catch (SocketException socketException)
+                    {
+                        if (socketException.SocketErrorCode != SocketError.TimedOut)
+                        {
+                            Log.Error("SocketException", socketException);
+                            Log.Debug($"SocketException.SocketErrorCode = {socketException.SocketErrorCode}");
 
-                                // Break out of the 'using socket' loop and try to establish a new socket.
-                                break;
-                            }
+                            // Break out of the 'using socket' loop and try to establish a new socket.
+                            break;
                         }
-                        catch (Exception e)
-                        {
-                            Log.Error("UdpClient Exception", e);
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("UdpClient Exception", e);
                     }
                 }
             }
-
-            Log.Debug("SocketListener completed");
         }
 
-        private void MessagePump()
+        Log.Debug("SocketListener completed");
+    }
+
+    private void MessagePump()
+    {
+        Log.Debug("MessagePump started");
+
+        var processedQueue = new Queue<ILogEntry>();
+
+        while (!cancellationTokenSource.IsCancellationRequested)
         {
-            Log.Debug("MessagePump started");
+            Thread.Sleep(PumpFrequency);
 
-            var processedQueue = new Queue<ILogEntry>();
-
-            while (!cancellationTokenSource.IsCancellationRequested)
+            try
             {
-                Thread.Sleep(PumpFrequency);
-
-                try
+                if (Logger != null)
                 {
-                    if (Logger != null)
+                    lock (pendingQueue)
                     {
-                        lock (pendingQueue)
+                        while (pendingQueue.Count > 0)
                         {
-                            while (pendingQueue.Count > 0)
+                            var message = pendingQueue.Dequeue();
+
+                            // TODO: validate
+                            if (IsValidMessage(message))
                             {
-                                var message = pendingQueue.Dequeue();
+                                var deserializeMessage = DeserializeMessage(message);
 
-                                // TODO: validate
-                                if (IsValidMessage(message))
+                                if (deserializeMessage != null)
                                 {
-                                    var deserializeMessage = DeserializeMessage(message);
-
-                                    if (deserializeMessage != null)
-                                    {
-                                        processedQueue.Enqueue(deserializeMessage);
-                                    }
+                                    processedQueue.Enqueue(deserializeMessage);
                                 }
                             }
                         }
-
-                        if (processedQueue.Any())
-                        {
-                            Logger.AddBatch(processedQueue);
-                        }
                     }
-                }
-                catch (Exception e)
-                {
-                    Log.Error("MessagePump Exception", e);
-                }
-                finally
-                {
-                    processedQueue.Clear();
-                }
-            }
 
-            Log.Debug("MessagePump completed");
-        }
-
-        private ILogEntry DeserializeMessage(string message)
-        {
-            try
-            {
-                var json = JToken.Parse(message);
-
-                var jsonObject = json as JObject;
-
-                if (jsonObject != null && jsonObject.Children().Count() == 1)
-                {
-                    var property = jsonObject.Children().First() as JProperty;
-
-                    if (property == null)
+                    if (processedQueue.Any())
                     {
-                        Log.Error("First item in JObject should be a property");
-                    }
-                    else
-                    {
-                        var msbuildEventType = property.Name;
-                        var content = property.Value as JObject;
-
-                        if (string.IsNullOrWhiteSpace(msbuildEventType) || content == null)
-                        {
-                            Log.ErrorFormat(
-                                "Expected payload to consist of a property corresponding to the MSBuild event type name, "
-                                + "and a value which is the serialized object corresponding to the type.");
-                        }
-                        else
-                        {
-                            return new LogEntry(msbuildEventType, content);
-                        }
+                        Logger.AddBatch(processedQueue);
                     }
                 }
             }
             catch (Exception e)
             {
-                Log.Error("Deserialization exception trying to turn the JSON content into a LogMessage", e);
+                Log.Error("MessagePump Exception", e);
             }
-
-            return null;
+            finally
+            {
+                processedQueue.Clear();
+            }
         }
 
-        private bool IsValidMessage(string message)
+        Log.Debug("MessagePump completed");
+    }
+
+    private ILogEntry DeserializeMessage(string message)
+    {
+        try
         {
-            // TODO: validation logic required.
-            return true;
+            var json = JToken.Parse(message);
+
+            var jsonObject = json as JObject;
+
+            if (jsonObject != null && jsonObject.Children().Count() == 1)
+            {
+                var property = jsonObject.Children().First() as JProperty;
+
+                if (property == null)
+                {
+                    Log.Error("First item in JObject should be a property");
+                }
+                else
+                {
+                    var msbuildEventType = property.Name;
+                    var content = property.Value as JObject;
+
+                    if (string.IsNullOrWhiteSpace(msbuildEventType) || content == null)
+                    {
+                        Log.ErrorFormat(
+                            "Expected payload to consist of a property corresponding to the MSBuild event type name, "
+                            + "and a value which is the serialized object corresponding to the type.");
+                    }
+                    else
+                    {
+                        return new LogEntry(msbuildEventType, content);
+                    }
+                }
+            }
         }
+        catch (Exception e)
+        {
+            Log.Error("Deserialization exception trying to turn the JSON content into a LogMessage", e);
+        }
+
+        return null;
+    }
+
+    private bool IsValidMessage(string message)
+    {
+        // TODO: validation logic required.
+        return true;
     }
 }

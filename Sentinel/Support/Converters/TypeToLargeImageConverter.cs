@@ -1,12 +1,11 @@
-namespace Sentinel.Support.Converters
-{
-    using Sentinel.Images;
+namespace Sentinel.Support.Converters;
 
-    public class TypeToLargeImageConverter : TypeToImageConverter
+using Sentinel.Images;
+
+public class TypeToLargeImageConverter : TypeToImageConverter
+{
+    public TypeToLargeImageConverter()
     {
-        public TypeToLargeImageConverter()
-        {
-            Quality = ImageQuality.Large;
-        }
+        Quality = ImageQuality.Large;
     }
 }

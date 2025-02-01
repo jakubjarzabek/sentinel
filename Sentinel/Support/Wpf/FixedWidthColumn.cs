@@ -1,47 +1,46 @@
-namespace Sentinel.Support.Wpf
+namespace Sentinel.Support.Wpf;
+
+using System.Windows;
+using System.Windows.Controls;
+
+public class FixedWidthColumn : GridViewColumn
 {
-    using System.Windows;
-    using System.Windows.Controls;
+    public static readonly DependencyProperty FixedWidthProperty =
+        DependencyProperty.Register(
+            "FixedWidth",
+            typeof(double),
+            typeof(FixedWidthColumn),
+            new FrameworkPropertyMetadata(double.NaN, OnFixedWidthChanged));
 
-    public class FixedWidthColumn : GridViewColumn
+    static FixedWidthColumn()
     {
-        public static readonly DependencyProperty FixedWidthProperty =
-            DependencyProperty.Register(
-                "FixedWidth",
-                typeof(double),
-                typeof(FixedWidthColumn),
-                new FrameworkPropertyMetadata(double.NaN, OnFixedWidthChanged));
+        WidthProperty.OverrideMetadata(
+            typeof(FixedWidthColumn),
+            new FrameworkPropertyMetadata(null, OnCoerceWidth));
+    }
 
-        static FixedWidthColumn()
+    public double FixedWidth
+    {
+        get
         {
-            WidthProperty.OverrideMetadata(
-                typeof(FixedWidthColumn),
-                new FrameworkPropertyMetadata(null, OnCoerceWidth));
+            return (double)GetValue(FixedWidthProperty);
         }
 
-        public double FixedWidth
+        set
         {
-            get
-            {
-                return (double)GetValue(FixedWidthProperty);
-            }
-
-            set
-            {
-                SetValue(FixedWidthProperty, value);
-            }
+            SetValue(FixedWidthProperty, value);
         }
+    }
 
-        private static object OnCoerceWidth(DependencyObject o, object baseValue)
-        {
-            var fwc = o as FixedWidthColumn;
-            return fwc?.FixedWidth ?? baseValue;
-        }
+    private static object OnCoerceWidth(DependencyObject o, object baseValue)
+    {
+        var fwc = o as FixedWidthColumn;
+        return fwc?.FixedWidth ?? baseValue;
+    }
 
-        private static void OnFixedWidthChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
-        {
-            var fwc = o as FixedWidthColumn;
-            fwc?.CoerceValue(WidthProperty);
-        }
+    private static void OnFixedWidthChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        var fwc = o as FixedWidthColumn;
+        fwc?.CoerceValue(WidthProperty);
     }
 }

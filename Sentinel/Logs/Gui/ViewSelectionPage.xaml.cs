@@ -1,270 +1,269 @@
-﻿namespace Sentinel.Logs.Gui
+﻿namespace Sentinel.Logs.Gui;
+
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows.Controls;
+
+using Sentinel.Services;
+using Sentinel.Views.Interfaces;
+
+using WpfExtras;
+
+/// <summary>
+/// Interaction logic for ViewSelectionPage.xaml.
+/// </summary>
+public partial class ViewSelectionPage : IWizardPage
 {
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Windows.Controls;
+    private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
-    using Sentinel.Services;
-    using Sentinel.Views.Interfaces;
+    private bool horizontal;
 
-    using WpfExtras;
+    private bool multipleView;
 
-    /// <summary>
-    /// Interaction logic for ViewSelectionPage.xaml.
-    /// </summary>
-    public partial class ViewSelectionPage : IWizardPage
+    private int primaryIndex;
+
+    private int secondaryIndex;
+
+    private bool singleView = true;
+
+    private bool vertical = true;
+
+    private bool multipleViewsSupported = false;
+
+    private IEnumerable<IViewInformation> registeredViews;
+
+    public ViewSelectionPage()
     {
-        private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
+        InitializeComponent();
+        DataContext = this;
 
-        private bool horizontal;
+        Children = new ReadOnlyObservableCollection<IWizardPage>(children);
 
-        private bool multipleView;
-
-        private int primaryIndex;
-
-        private int secondaryIndex;
-
-        private bool singleView = true;
-
-        private bool vertical = true;
-
-        private bool multipleViewsSupported = false;
-
-        private IEnumerable<IViewInformation> registeredViews;
-
-        public ViewSelectionPage()
+        IViewManager vm = ServiceLocator.Instance.Get<IViewManager>();
+        if (vm != null)
         {
-            InitializeComponent();
-            DataContext = this;
-
-            Children = new ReadOnlyObservableCollection<IWizardPage>(children);
-
-            IViewManager vm = ServiceLocator.Instance.Get<IViewManager>();
-            if (vm != null)
-            {
-                registeredViews = new List<IViewInformation>(vm.Registered);
+            registeredViews = new List<IViewInformation>(vm.Registered);
 
 #if DISABLE_MULTIPLE_VIEWS
                 MultipleViewsSupported = registeredViews.Count() > 1;
 #endif
-                SecondaryIndex = registeredViews.Count() > 1 ? 1 : PrimaryIndex;
-            }
-
-            PropertyChanged += PropertyChangedHandler;
+            SecondaryIndex = registeredViews.Count() > 1 ? 1 : PrimaryIndex;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        PropertyChanged += PropertyChangedHandler;
+    }
 
-        public bool Horizontal
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public bool Horizontal
+    {
+        get
         {
-            get
-            {
-                return horizontal;
-            }
-
-            set
-            {
-                if (horizontal == value)
-                {
-                    return;
-                }
-
-                horizontal = value;
-                OnPropertyChanged(nameof(Horizontal));
-            }
+            return horizontal;
         }
 
-        public bool Vertical
+        set
         {
-            get
+            if (horizontal == value)
             {
-                return vertical;
+                return;
             }
 
-            set
-            {
-                if (vertical != value)
-                {
-                    vertical = value;
-                    OnPropertyChanged(nameof(Vertical));
-                }
-            }
+            horizontal = value;
+            OnPropertyChanged(nameof(Horizontal));
+        }
+    }
+
+    public bool Vertical
+    {
+        get
+        {
+            return vertical;
         }
 
-        public bool MultipleViewsSupported
+        set
         {
-            get
+            if (vertical != value)
             {
-                return multipleViewsSupported;
-            }
-
-            private set
-            {
-                if (multipleViewsSupported != value)
-                {
-                    multipleViewsSupported = value;
-                    OnPropertyChanged(nameof(MultipleViewsSupported));
-                }
+                vertical = value;
+                OnPropertyChanged(nameof(Vertical));
             }
         }
+    }
 
-        public bool MultipleView
+    public bool MultipleViewsSupported
+    {
+        get
         {
-            get
-            {
-                return multipleView;
-            }
-
-            set
-            {
-                if (multipleView != value)
-                {
-                    multipleView = value;
-                    OnPropertyChanged(nameof(MultipleView));
-                }
-            }
+            return multipleViewsSupported;
         }
 
-        public bool SingleView
+        private set
         {
-            get
+            if (multipleViewsSupported != value)
             {
-                return singleView;
-            }
-
-            set
-            {
-                if (singleView != value)
-                {
-                    singleView = value;
-                    OnPropertyChanged(nameof(SingleView));
-                }
+                multipleViewsSupported = value;
+                OnPropertyChanged(nameof(MultipleViewsSupported));
             }
         }
+    }
 
-        public IEnumerable<IViewInformation> RegisteredViews
+    public bool MultipleView
+    {
+        get
         {
-            get
-            {
-                return registeredViews;
-            }
-
-            private set
-            {
-                if (!Equals(registeredViews, value))
-                {
-                    registeredViews = value;
-                    OnPropertyChanged(nameof(RegisteredViews));
-                }
-            }
+            return multipleView;
         }
 
-        public int PrimaryIndex
+        set
         {
-            get
+            if (multipleView != value)
             {
-                return primaryIndex;
-            }
-
-            set
-            {
-                if (primaryIndex != value)
-                {
-                    primaryIndex = value;
-                    OnPropertyChanged(nameof(PrimaryIndex));
-                }
+                multipleView = value;
+                OnPropertyChanged(nameof(MultipleView));
             }
         }
+    }
 
-        public int SecondaryIndex
+    public bool SingleView
+    {
+        get
         {
-            get
+            return singleView;
+        }
+
+        set
+        {
+            if (singleView != value)
             {
-                return secondaryIndex;
+                singleView = value;
+                OnPropertyChanged(nameof(SingleView));
             }
+        }
+    }
 
-            set
+    public IEnumerable<IViewInformation> RegisteredViews
+    {
+        get
+        {
+            return registeredViews;
+        }
+
+        private set
+        {
+            if (!Equals(registeredViews, value))
             {
-                if (secondaryIndex != value)
-                {
-                    secondaryIndex = value;
-                    OnPropertyChanged(nameof(SecondaryIndex));
-                }
+                registeredViews = value;
+                OnPropertyChanged(nameof(RegisteredViews));
             }
         }
+    }
 
-        public string Title => "Visualising the Log";
-
-        public ReadOnlyObservableCollection<IWizardPage> Children { get; }
-
-        public string Description => "Select the desired views to visualise the logger and its providers.";
-
-        public bool IsValid => true;
-
-        public Control PageContent => this;
-
-        public void AddChild(IWizardPage newItem)
+    public int PrimaryIndex
+    {
+        get
         {
-            children.Add(newItem);
-            OnPropertyChanged(nameof(Children));
+            return primaryIndex;
         }
 
-        public void RemoveChild(IWizardPage item)
+        set
         {
-            children.Remove(item);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public object Save(object saveData)
-        {
-            Debug.Assert(saveData != null, "Expecting a non-null instance of a class to save settings into");
-            Debug.Assert(saveData is NewLoggerSettings, "Expecting save data structure to be a NewLoggerSettings");
-
-            var settings = saveData as NewLoggerSettings;
-            if (settings != null)
+            if (primaryIndex != value)
             {
-                settings.Views.Clear();
-                settings.Views.Add(registeredViews.ElementAt(PrimaryIndex).Identifier);
-                if (MultipleView)
-                {
-                    settings.Views.Add(registeredViews.ElementAt(SecondaryIndex).Identifier);
-                    settings.IsVertical = Vertical;
-                }
+                primaryIndex = value;
+                OnPropertyChanged(nameof(PrimaryIndex));
             }
+        }
+    }
 
-            return saveData;
+    public int SecondaryIndex
+    {
+        get
+        {
+            return secondaryIndex;
         }
 
-        protected void OnPropertyChanged(string propertyName)
+        set
         {
-            var handler = PropertyChanged;
-            if (handler != null)
+            if (secondaryIndex != value)
             {
-                var e = new PropertyChangedEventArgs(propertyName);
-                handler(this, e);
+                secondaryIndex = value;
+                OnPropertyChanged(nameof(SecondaryIndex));
+            }
+        }
+    }
+
+    public string Title => "Visualising the Log";
+
+    public ReadOnlyObservableCollection<IWizardPage> Children { get; }
+
+    public string Description => "Select the desired views to visualise the logger and its providers.";
+
+    public bool IsValid => true;
+
+    public Control PageContent => this;
+
+    public void AddChild(IWizardPage newItem)
+    {
+        children.Add(newItem);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public void RemoveChild(IWizardPage item)
+    {
+        children.Remove(item);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public object Save(object saveData)
+    {
+        Debug.Assert(saveData != null, "Expecting a non-null instance of a class to save settings into");
+        Debug.Assert(saveData is NewLoggerSettings, "Expecting save data structure to be a NewLoggerSettings");
+
+        var settings = saveData as NewLoggerSettings;
+        if (settings != null)
+        {
+            settings.Views.Clear();
+            settings.Views.Add(registeredViews.ElementAt(PrimaryIndex).Identifier);
+            if (MultipleView)
+            {
+                settings.Views.Add(registeredViews.ElementAt(SecondaryIndex).Identifier);
+                settings.IsVertical = Vertical;
             }
         }
 
-        private void PropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+        return saveData;
+    }
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        if (handler != null)
         {
-            switch (e.PropertyName)
-            {
-                case "Horizontal":
-                    Vertical = !Horizontal;
-                    break;
-                case "Vertical":
-                    Horizontal = !Vertical;
-                    break;
-                case "SingleView":
-                    MultipleView = !SingleView;
-                    break;
-                case "MultipleView":
-                    SingleView = !MultipleView;
-                    break;
-            }
+            var e = new PropertyChangedEventArgs(propertyName);
+            handler(this, e);
+        }
+    }
+
+    private void PropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case "Horizontal":
+                Vertical = !Horizontal;
+                break;
+            case "Vertical":
+                Horizontal = !Vertical;
+                break;
+            case "SingleView":
+                MultipleView = !SingleView;
+                break;
+            case "MultipleView":
+                SingleView = !MultipleView;
+                break;
         }
     }
 }

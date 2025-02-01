@@ -1,118 +1,117 @@
-namespace Sentinel.Filters.Gui
+namespace Sentinel.Filters.Gui;
+
+using System.Windows;
+using System.Windows.Input;
+
+using Sentinel.Interfaces;
+
+using WpfExtras;
+
+public class AddEditFilter : ViewModelBase
 {
-    using System.Windows;
-    using System.Windows.Input;
+    private readonly Window window;
 
-    using Sentinel.Interfaces;
+    private string name = "Unnamed";
 
-    using WpfExtras;
+    private string pattern = "pattern";
 
-    public class AddEditFilter : ViewModelBase
+    private LogEntryFields field;
+
+    private MatchMode mode;
+
+    public AddEditFilter(Window window, bool editMode)
     {
-        private readonly Window window;
-
-        private string name = "Unnamed";
-
-        private string pattern = "pattern";
-
-        private LogEntryFields field;
-
-        private MatchMode mode;
-
-        public AddEditFilter(Window window, bool editMode)
+        this.window = window;
+        if (window != null)
         {
-            this.window = window;
-            if (window != null)
-            {
-                window.Title = $"{(editMode ? "Edit" : "Register")} Filter";
-            }
-
-            Accept = new DelegateCommand(AcceptDialog, Validates);
-            Reject = new DelegateCommand(RejectDialog);
+            window.Title = $"{(editMode ? "Edit" : "Register")} Filter";
         }
 
-        public ICommand Accept { get; private set; }
+        Accept = new DelegateCommand(AcceptDialog, Validates);
+        Reject = new DelegateCommand(RejectDialog);
+    }
 
-        public LogEntryFields Field
+    public ICommand Accept { get; private set; }
+
+    public LogEntryFields Field
+    {
+        get
         {
-            get
-            {
-                return field;
-            }
-
-            set
-            {
-                field = value;
-                OnPropertyChanged(nameof(Field));
-            }
+            return field;
         }
 
-        public MatchMode Mode
+        set
         {
-            get
-            {
-                return mode;
-            }
+            field = value;
+            OnPropertyChanged(nameof(Field));
+        }
+    }
 
-            set
-            {
-                mode = value;
-                OnPropertyChanged(nameof(Mode));
-            }
+    public MatchMode Mode
+    {
+        get
+        {
+            return mode;
         }
 
-        public string Name
+        set
         {
-            get
-            {
-                return name;
-            }
+            mode = value;
+            OnPropertyChanged(nameof(Mode));
+        }
+    }
 
-            set
-            {
-                if (name != value)
-                {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
-                }
-            }
+    public string Name
+    {
+        get
+        {
+            return name;
         }
 
-        public string Pattern
+        set
         {
-            get
+            if (name != value)
             {
-                return pattern;
-            }
-
-            set
-            {
-                if (value != pattern)
-                {
-                    pattern = value;
-                    OnPropertyChanged(nameof(Pattern));
-                }
+                name = value;
+                OnPropertyChanged(nameof(Name));
             }
         }
+    }
 
-        public ICommand Reject { get; private set; }
-
-        private void AcceptDialog(object obj)
+    public string Pattern
+    {
+        get
         {
-            window.DialogResult = true;
-            window.Close();
+            return pattern;
         }
 
-        private void RejectDialog(object obj)
+        set
         {
-            window.DialogResult = false;
-            window.Close();
+            if (value != pattern)
+            {
+                pattern = value;
+                OnPropertyChanged(nameof(Pattern));
+            }
         }
+    }
 
-        private bool Validates(object obj)
-        {
-            return Name.Length > 0
-                   && Pattern.Length > 0;
-        }
+    public ICommand Reject { get; private set; }
+
+    private void AcceptDialog(object obj)
+    {
+        window.DialogResult = true;
+        window.Close();
+    }
+
+    private void RejectDialog(object obj)
+    {
+        window.DialogResult = false;
+        window.Close();
+    }
+
+    private bool Validates(object obj)
+    {
+        return Name.Length > 0
+               && Pattern.Length > 0;
     }
 }

@@ -1,26 +1,25 @@
-namespace Sentinel.Providers.Interfaces
+namespace Sentinel.Providers.Interfaces;
+
+using System;
+using System.Collections.Generic;
+
+using Sentinel.Interfaces.Providers;
+
+public interface IProviderManager : IEnumerable<Guid>
 {
-    using System;
-    using System.Collections.Generic;
+    IEnumerable<ILogProvider> Instances { get; }
 
-    using Sentinel.Interfaces.Providers;
+    IEnumerable<Guid> Registered { get; }
 
-    public interface IProviderManager : IEnumerable<Guid>
-    {
-        IEnumerable<ILogProvider> Instances { get; }
+    void Register(IProviderRegistrationRecord record);
 
-        IEnumerable<Guid> Registered { get; }
+    ILogProvider Create(Guid providerGuid, IProviderSettings settings);
 
-        void Register(IProviderRegistrationRecord record);
+    ILogProvider Get(string name);
 
-        ILogProvider Create(Guid providerGuid, IProviderSettings settings);
+    void Remove(string name);
 
-        ILogProvider Get(string name);
+    IProviderInfo GetInformation(Guid providerGuid);
 
-        void Remove(string name);
-
-        IProviderInfo GetInformation(Guid providerGuid);
-
-        T GetConfiguration<T>(Guid providerGuid);
-    }
+    T GetConfiguration<T>(Guid providerGuid);
 }

@@ -1,25 +1,24 @@
-namespace Sentinel.Views.Interfaces
+namespace Sentinel.Views.Interfaces;
+
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Windows.Controls;
+
+using Sentinel.Interfaces;
+
+public interface ILogViewer
 {
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Windows.Controls;
+    string Name { get; }
 
-    using Sentinel.Interfaces;
+    ILogger Logger { get; }
 
-    public interface ILogViewer
-    {
-        string Name { get; }
+    Control Presenter { get; }
 
-        ILogger Logger { get; }
+    ObservableCollection<ILogEntry> Messages { get; }
 
-        Control Presenter { get; }
+    string Status { get; }
 
-        ObservableCollection<ILogEntry> Messages { get; }
+    IEnumerable<ILogViewerToolbarButton> ToolbarItems { get; }
 
-        string Status { get; }
-
-        IEnumerable<ILogViewerToolbarButton> ToolbarItems { get; }
-
-        void SetLogger(ILogger newLogger);
-    }
+    void SetLogger(ILogger newLogger);
 }

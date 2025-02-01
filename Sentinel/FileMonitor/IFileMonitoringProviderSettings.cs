@@ -1,17 +1,16 @@
-﻿namespace Sentinel.FileMonitor
+﻿namespace Sentinel.FileMonitor;
+
+using Sentinel.Interfaces.Providers;
+
+public interface IFileMonitoringProviderSettings : IProviderSettings
 {
-    using Sentinel.Interfaces.Providers;
+    string FileName { get; }
 
-    public interface IFileMonitoringProviderSettings : IProviderSettings
-    {
-        string FileName { get; }
+    int RefreshPeriod { get; }
 
-        int RefreshPeriod { get; }
+    bool LoadExistingContent { get; }
 
-        bool LoadExistingContent { get; }
+    string MessageDecoder { get; set; }
 
-        string MessageDecoder { get; set; }
-
-        void Update(string fileName, int refresh, bool loadExisting);
-    }
+    void Update(string fileName, int refresh, bool loadExisting);
 }

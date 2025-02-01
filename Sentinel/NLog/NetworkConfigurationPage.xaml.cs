@@ -1,147 +1,146 @@
-﻿namespace Sentinel.NLog
+﻿namespace Sentinel.NLog;
+
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Windows.Controls;
+
+using Sentinel.Interfaces.Providers;
+using Sentinel.WpfExtras;
+
+public partial class NetworkConfigurationPage : UserControl, IWizardPage
 {
-    using System.Collections.ObjectModel;
-    using System.ComponentModel;
-    using System.Diagnostics;
-    using System.Windows.Controls;
+    private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
-    using Sentinel.Interfaces.Providers;
-    using Sentinel.WpfExtras;
+    private bool isValid;
 
-    public partial class NetworkConfigurationPage : UserControl, IWizardPage
+    private int port;
+
+    private bool isUdp = true;
+
+    public NetworkConfigurationPage()
     {
-        private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
+        InitializeComponent();
+        DataContext = this;
 
-        private bool isValid;
+        Children = new ReadOnlyObservableCollection<IWizardPage>(children);
 
-        private int port;
+        // Register to self so that we can handler user interactions.
+        PropertyChanged += SelectProviderPage_PropertyChanged;
 
-        private bool isUdp = true;
+        Port = 9999;
+    }
 
-        public NetworkConfigurationPage()
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public virtual bool SupportsTcp => true;
+
+    public virtual bool SupportsUdp => true;
+
+    public int Port
+    {
+        get => port;
+        set
         {
-            InitializeComponent();
-            DataContext = this;
-
-            Children = new ReadOnlyObservableCollection<IWizardPage>(children);
-
-            // Register to self so that we can handler user interactions.
-            PropertyChanged += SelectProviderPage_PropertyChanged;
-
-            Port = 9999;
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public virtual bool SupportsTcp => true;
-
-        public virtual bool SupportsUdp => true;
-
-        public int Port
-        {
-            get => port;
-            set
+            if (port != value)
             {
-                if (port != value)
-                {
-                    port = value;
-                    OnPropertyChanged(nameof(Port));
-                }
+                port = value;
+                OnPropertyChanged(nameof(Port));
             }
         }
+    }
 
-        public bool IsUdp
+    public bool IsUdp
+    {
+        get => isUdp;
+        set
         {
-            get => isUdp;
-            set
+            if (isUdp != value)
             {
-                if (isUdp != value)
-                {
-                    isUdp = value;
-                    OnPropertyChanged(nameof(IsUdp));
-                }
+                isUdp = value;
+                OnPropertyChanged(nameof(IsUdp));
             }
         }
+    }
 
-        public string Title => "Configure Provider";
+    public string Title => "Configure Provider";
 
-        public ReadOnlyObservableCollection<IWizardPage> Children { get; }
+    public ReadOnlyObservableCollection<IWizardPage> Children { get; }
 
-        public string Description => "Network settings to be used by new provider";
+    public string Description => "Network settings to be used by new provider";
 
-        public bool IsValid
+    public bool IsValid
+    {
+        get => isValid;
+
+        private set
         {
-            get => isValid;
-
-            private set
+            if (isValid != value)
             {
-                if (isValid != value)
-                {
-                    isValid = value;
-                    OnPropertyChanged(nameof(IsValid));
-                }
+                isValid = value;
+                OnPropertyChanged(nameof(IsValid));
             }
         }
+    }
 
-        public Control PageContent => this;
+    public Control PageContent => this;
 
-        public void AddChild(IWizardPage newItem)
+    public void AddChild(IWizardPage newItem)
+    {
+        children.Add(newItem);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public void RemoveChild(IWizardPage item)
+    {
+        children.Remove(item);
+        OnPropertyChanged(nameof(Children));
+    }
+
+    public object Save(object saveData)
+    {
+        Debug.Assert(
+            saveData != null,
+            "Expecting the save-data component to have details from the previous pages.");
+        Debug.Assert(
+            saveData is IProviderSettings,
+            "Expecting the save-data component to be of an IProviderSettings type.");
+
+        var previousInfo = (IProviderSettings) saveData;
+
+        return new NetworkSettings
         {
-            children.Add(newItem);
-            OnPropertyChanged(nameof(Children));
+            Name = previousInfo.Name,
+            Info = previousInfo.Info,
+            Port = Port,
+            Protocol = IsUdp ? NetworkProtocol.Udp : NetworkProtocol.Tcp,
+        };
+    }
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        var handler = PropertyChanged;
+        if (handler != null)
+        {
+            var e = new PropertyChangedEventArgs(propertyName);
+            handler(this, e);
         }
+    }
 
-        public void RemoveChild(IWizardPage item)
+    private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        // Establish default selection
+        Debug.Assert(SupportsUdp || SupportsTcp, "The provider needs to support at least one of UDP or TCP");
+        IsUdp = SupportsUdp;
+    }
+
+    private void SelectProviderPage_PropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "Port")
         {
-            children.Remove(item);
-            OnPropertyChanged(nameof(Children));
-        }
-
-        public object Save(object saveData)
-        {
-            Debug.Assert(
-                saveData != null,
-                "Expecting the save-data component to have details from the previous pages.");
-            Debug.Assert(
-                saveData is IProviderSettings,
-                "Expecting the save-data component to be of an IProviderSettings type.");
-
-            var previousInfo = (IProviderSettings) saveData;
-
-            return new NetworkSettings
-            {
-                Name = previousInfo.Name,
-                Info = previousInfo.Info,
-                Port = Port,
-                Protocol = IsUdp ? NetworkProtocol.Udp : NetworkProtocol.Tcp,
-            };
-        }
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            var handler = PropertyChanged;
-            if (handler != null)
-            {
-                var e = new PropertyChangedEventArgs(propertyName);
-                handler(this, e);
-            }
-        }
-
-        private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
-        {
-            // Establish default selection
-            Debug.Assert(SupportsUdp || SupportsTcp, "The provider needs to support at least one of UDP or TCP");
-            IsUdp = SupportsUdp;
-        }
-
-        private void SelectProviderPage_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "Port")
-            {
-                bool state = port > 2000;
-                Trace.WriteLine($"Setting PageValidates to {state}");
-                IsValid = state;
-            }
+            bool state = port > 2000;
+            Trace.WriteLine($"Setting PageValidates to {state}");
+            IsValid = state;
         }
     }
 }

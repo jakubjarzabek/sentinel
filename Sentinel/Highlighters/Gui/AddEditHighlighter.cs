@@ -1,291 +1,290 @@
-namespace Sentinel.Highlighters.Gui
+namespace Sentinel.Highlighters.Gui;
+
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+
+using Sentinel.Interfaces;
+using Sentinel.Interfaces.CodeContracts;
+
+using WpfExtras;
+
+public class AddEditHighlighter : ViewModelBase
 {
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.Linq;
-    using System.Windows;
-    using System.Windows.Input;
-    using System.Windows.Media;
+    private readonly Window window;
 
-    using Sentinel.Interfaces;
-    using Sentinel.Interfaces.CodeContracts;
+    private readonly Dictionary<string, Color> colours = GetColours();
 
-    using WpfExtras;
+    private int backgroundColourIndex = 1;
 
-    public class AddEditHighlighter : ViewModelBase
+    private bool coloursAreClose;
+
+    private int foregroundColourIndex;
+
+    private bool overrideBackgroundColour = false;
+
+    private bool overrideForegroundColour = false;
+
+    private string name = "Untitled";
+
+    private string pattern = "pattern";
+
+    private LogEntryFields field;
+
+    private MatchMode mode;
+
+    public AddEditHighlighter(Window window, bool editMode)
     {
-        private readonly Window window;
-
-        private readonly Dictionary<string, Color> colours = GetColours();
-
-        private int backgroundColourIndex = 1;
-
-        private bool coloursAreClose;
-
-        private int foregroundColourIndex;
-
-        private bool overrideBackgroundColour = false;
-
-        private bool overrideForegroundColour = false;
-
-        private string name = "Untitled";
-
-        private string pattern = "pattern";
-
-        private LogEntryFields field;
-
-        private MatchMode mode;
-
-        public AddEditHighlighter(Window window, bool editMode)
+        this.window = window;
+        if (window != null)
         {
-            this.window = window;
-            if (window != null)
-            {
-                window.Title = editMode ? "Edit Highlighter" : "Add Highlighter";
-            }
-
-            PropertyChanged += CloseColourCheck;
-
-            Accept = new DelegateCommand(AcceptDialog, Validates);
-            Reject = new DelegateCommand(RejectDialog);
+            window.Title = editMode ? "Edit Highlighter" : "Add Highlighter";
         }
 
-        public ICommand Accept { get; private set; }
+        PropertyChanged += CloseColourCheck;
 
-        public Color BackgroundColour
+        Accept = new DelegateCommand(AcceptDialog, Validates);
+        Reject = new DelegateCommand(RejectDialog);
+    }
+
+    public ICommand Accept { get; private set; }
+
+    public Color BackgroundColour
+    {
+        get
         {
-            get
-            {
-                string key = colours.Keys.OrderBy(e => e).ToList()[backgroundColourIndex];
-                return colours[key];
-            }
-
-            set
-            {
-                var find = colours.FirstOrDefault(r => r.Value == value);
-                find.Key.ThrowIfNull(nameof(find.Key));
-
-                var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
-                BackgroundColourIndex = index;
-            }
+            string key = colours.Keys.OrderBy(e => e).ToList()[backgroundColourIndex];
+            return colours[key];
         }
 
-        public int BackgroundColourIndex
+        set
         {
-            get
-            {
-                return backgroundColourIndex;
-            }
+            var find = colours.FirstOrDefault(r => r.Value == value);
+            find.Key.ThrowIfNull(nameof(find.Key));
 
-            set
-            {
-                if (value != backgroundColourIndex)
-                {
-                    backgroundColourIndex = value;
-                    OnPropertyChanged(nameof(BackgroundColourIndex));
-                }
-            }
+            var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
+            BackgroundColourIndex = index;
+        }
+    }
+
+    public int BackgroundColourIndex
+    {
+        get
+        {
+            return backgroundColourIndex;
         }
 
-        public IEnumerable<string> BackgroundColours => colours.Keys;
-
-        public bool ColoursClose
+        set
         {
-            get
+            if (value != backgroundColourIndex)
             {
-                return coloursAreClose;
-            }
-
-            private set
-            {
-                if (coloursAreClose != value)
-                {
-                    coloursAreClose = value;
-                    OnPropertyChanged(nameof(ColoursClose));
-                }
+                backgroundColourIndex = value;
+                OnPropertyChanged(nameof(BackgroundColourIndex));
             }
         }
+    }
 
-        public Color ForegroundColour
+    public IEnumerable<string> BackgroundColours => colours.Keys;
+
+    public bool ColoursClose
+    {
+        get
         {
-            get
-            {
-                string key = colours.Keys.OrderBy(e => e).ToList()[foregroundColourIndex];
-                return colours[key];
-            }
-
-            set
-            {
-                var find = colours.FirstOrDefault(r => r.Value == value);
-                find.Key.ThrowIfNull(nameof(find.Key));
-
-                var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
-                ForegroundColourIndex = index;
-            }
+            return coloursAreClose;
         }
 
-        public int ForegroundColourIndex
+        private set
         {
-            get
+            if (coloursAreClose != value)
             {
-                return foregroundColourIndex;
-            }
-
-            set
-            {
-                if (value != foregroundColourIndex)
-                {
-                    foregroundColourIndex = value;
-                    OnPropertyChanged(nameof(ForegroundColourIndex));
-                }
+                coloursAreClose = value;
+                OnPropertyChanged(nameof(ColoursClose));
             }
         }
+    }
 
-        public IEnumerable<string> ForegroundColours => colours.Keys;
-
-        public LogEntryFields Field
+    public Color ForegroundColour
+    {
+        get
         {
-            get
-            {
-                return field;
-            }
-
-            set
-            {
-                field = value;
-                OnPropertyChanged(nameof(Field));
-            }
+            string key = colours.Keys.OrderBy(e => e).ToList()[foregroundColourIndex];
+            return colours[key];
         }
 
-        public MatchMode Mode
+        set
         {
-            get
-            {
-                return mode;
-            }
+            var find = colours.FirstOrDefault(r => r.Value == value);
+            find.Key.ThrowIfNull(nameof(find.Key));
 
-            set
-            {
-                mode = value;
-                OnPropertyChanged(nameof(Mode));
-            }
+            var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
+            ForegroundColourIndex = index;
+        }
+    }
+
+    public int ForegroundColourIndex
+    {
+        get
+        {
+            return foregroundColourIndex;
         }
 
-        public string Name
+        set
         {
-            get
+            if (value != foregroundColourIndex)
             {
-                return name;
-            }
-
-            set
-            {
-                if (name != value)
-                {
-                    name = value;
-                    OnPropertyChanged(nameof(Name));
-                }
+                foregroundColourIndex = value;
+                OnPropertyChanged(nameof(ForegroundColourIndex));
             }
         }
+    }
 
-        public bool OverrideBackgroundColour
+    public IEnumerable<string> ForegroundColours => colours.Keys;
+
+    public LogEntryFields Field
+    {
+        get
         {
-            get
-            {
-                return overrideBackgroundColour;
-            }
-
-            set
-            {
-                if (value != overrideBackgroundColour)
-                {
-                    overrideBackgroundColour = value;
-                    OnPropertyChanged(nameof(OverrideBackgroundColour));
-                }
-            }
+            return field;
         }
 
-        public bool OverrideForegroundColour
+        set
         {
-            get
-            {
-                return overrideForegroundColour;
-            }
+            field = value;
+            OnPropertyChanged(nameof(Field));
+        }
+    }
 
-            set
-            {
-                if (value != overrideForegroundColour)
-                {
-                    overrideForegroundColour = value;
-                    OnPropertyChanged(nameof(OverrideForegroundColour));
-                }
-            }
+    public MatchMode Mode
+    {
+        get
+        {
+            return mode;
         }
 
-        public string Pattern
+        set
         {
-            get
-            {
-                return pattern;
-            }
+            mode = value;
+            OnPropertyChanged(nameof(Mode));
+        }
+    }
 
-            set
+    public string Name
+    {
+        get
+        {
+            return name;
+        }
+
+        set
+        {
+            if (name != value)
             {
-                if (value != pattern)
-                {
-                    pattern = value;
-                    OnPropertyChanged(nameof(Pattern));
-                }
+                name = value;
+                OnPropertyChanged(nameof(Name));
+            }
+        }
+    }
+
+    public bool OverrideBackgroundColour
+    {
+        get
+        {
+            return overrideBackgroundColour;
+        }
+
+        set
+        {
+            if (value != overrideBackgroundColour)
+            {
+                overrideBackgroundColour = value;
+                OnPropertyChanged(nameof(OverrideBackgroundColour));
+            }
+        }
+    }
+
+    public bool OverrideForegroundColour
+    {
+        get
+        {
+            return overrideForegroundColour;
+        }
+
+        set
+        {
+            if (value != overrideForegroundColour)
+            {
+                overrideForegroundColour = value;
+                OnPropertyChanged(nameof(OverrideForegroundColour));
+            }
+        }
+    }
+
+    public string Pattern
+    {
+        get
+        {
+            return pattern;
+        }
+
+        set
+        {
+            if (value != pattern)
+            {
+                pattern = value;
+                OnPropertyChanged(nameof(Pattern));
+            }
+        }
+    }
+
+    public ICommand Reject { get; private set; }
+
+    private static Dictionary<string, Color> GetColours()
+    {
+        var colours = new Dictionary<string, Color>();
+        foreach (var propertyInfo in typeof(Colors).GetProperties())
+        {
+            var colour = ColorConverter.ConvertFromString(propertyInfo.Name);
+            if (colour != null)
+            {
+                colours.Add(propertyInfo.Name, (Color)colour);
             }
         }
 
-        public ICommand Reject { get; private set; }
+        return colours;
+    }
 
-        private static Dictionary<string, Color> GetColours()
+    private void AcceptDialog(object obj)
+    {
+        window.DialogResult = true;
+        window.Close();
+    }
+
+    private void CloseColourCheck(object sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
         {
-            var colours = new Dictionary<string, Color>();
-            foreach (var propertyInfo in typeof(Colors).GetProperties())
-            {
-                var colour = ColorConverter.ConvertFromString(propertyInfo.Name);
-                if (colour != null)
-                {
-                    colours.Add(propertyInfo.Name, (Color)colour);
-                }
-            }
-
-            return colours;
+            case "OverrideForegroundColour":
+            case "OverrideBackgroundColour":
+            case "BackgroundColourIndex":
+            case "ForegroundColourIndex":
+                ColoursClose = OverrideBackgroundColour && OverrideForegroundColour && Color.AreClose(ForegroundColour, BackgroundColour);
+                break;
         }
+    }
 
-        private void AcceptDialog(object obj)
-        {
-            window.DialogResult = true;
-            window.Close();
-        }
+    private void RejectDialog(object obj)
+    {
+        window.DialogResult = false;
+        window.Close();
+    }
 
-        private void CloseColourCheck(object sender, PropertyChangedEventArgs e)
-        {
-            switch (e.PropertyName)
-            {
-                case "OverrideForegroundColour":
-                case "OverrideBackgroundColour":
-                case "BackgroundColourIndex":
-                case "ForegroundColourIndex":
-                    ColoursClose = OverrideBackgroundColour && OverrideForegroundColour && Color.AreClose(ForegroundColour, BackgroundColour);
-                    break;
-            }
-        }
-
-        private void RejectDialog(object obj)
-        {
-            window.DialogResult = false;
-            window.Close();
-        }
-
-        private bool Validates(object obj)
-        {
-            return !ColoursClose
-                   && Name.Length > 0
-                   && Pattern.Length > 0;
-        }
+    private bool Validates(object obj)
+    {
+        return !ColoursClose
+               && Name.Length > 0
+               && Pattern.Length > 0;
     }
 }

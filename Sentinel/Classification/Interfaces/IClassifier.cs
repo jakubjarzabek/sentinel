@@ -1,34 +1,33 @@
-namespace Sentinel.Classification.Interfaces
+namespace Sentinel.Classification.Interfaces;
+
+using System.Runtime.Serialization;
+
+using Sentinel.Interfaces;
+
+public interface IClassifier
 {
-    using System.Runtime.Serialization;
+    [DataMember]
+    string Name { get; set; }
 
-    using Sentinel.Interfaces;
+    [DataMember]
+    string Type { get; set; }
 
-    public interface IClassifier
-    {
-        [DataMember]
-        string Name { get; set; }
+    [DataMember]
+    bool Enabled { get; set; }
 
-        [DataMember]
-        string Type { get; set; }
+    [DataMember]
+    string Pattern { get; set; }
 
-        [DataMember]
-        bool Enabled { get; set; }
+    [DataMember]
+    string Description { get; }
 
-        [DataMember]
-        string Pattern { get; set; }
+    [DataMember]
+    LogEntryFields Field { get; set; }
 
-        [DataMember]
-        string Description { get; }
+    [DataMember]
+    MatchMode Mode { get; set; }
 
-        [DataMember]
-        LogEntryFields Field { get; set; }
+    bool IsMatch(ILogEntry entry);
 
-        [DataMember]
-        MatchMode Mode { get; set; }
-
-        bool IsMatch(ILogEntry entry);
-
-        ILogEntry Classify(ILogEntry entry);
-    }
+    ILogEntry Classify(ILogEntry entry);
 }

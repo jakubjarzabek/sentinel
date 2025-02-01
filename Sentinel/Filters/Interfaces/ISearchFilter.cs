@@ -1,6 +1,5 @@
-﻿namespace Sentinel.Filters.Interfaces
+﻿namespace Sentinel.Filters.Interfaces;
+
+public interface ISearchFilter : IFilter
 {
-    public interface ISearchFilter : IFilter
-    {
-    }
 }

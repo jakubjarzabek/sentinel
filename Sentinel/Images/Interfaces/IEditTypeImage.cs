@@ -1,7 +1,6 @@
-namespace Sentinel.Images.Interfaces
+namespace Sentinel.Images.Interfaces;
+
+public interface IEditTypeImage
 {
-    public interface IEditTypeImage
-    {
-        void Edit(ImageTypeRecord imageTypeRecord);
-    }
+    void Edit(ImageTypeRecord imageTypeRecord);
 }

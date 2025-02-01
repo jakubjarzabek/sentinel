@@ -1,103 +1,102 @@
-namespace Sentinel.Highlighters
+namespace Sentinel.Highlighters;
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Windows.Media;
+
+using Sentinel.Highlighters.Interfaces;
+using Sentinel.Interfaces;
+
+[DataContract]
+public class SearchHighlighter : IDefaultInitialisation, ISearchHighlighter
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Runtime.Serialization;
-    using System.Windows.Media;
+    [DataMember]
+    public IHighlighter Highlighter { get; set; }
 
-    using Sentinel.Highlighters.Interfaces;
-    using Sentinel.Interfaces;
-
-    [DataContract]
-    public class SearchHighlighter : IDefaultInitialisation, ISearchHighlighter
+    public IEnumerable<LogEntryFields> Fields
     {
-        [DataMember]
-        public IHighlighter Highlighter { get; set; }
-
-        public IEnumerable<LogEntryFields> Fields
+        get
         {
-            get
-            {
-                var entries = Enum.GetValues(typeof(LogEntryFields)).Cast<LogEntryFields>();
-                return entries;
-            }
+            var entries = Enum.GetValues(typeof(LogEntryFields)).Cast<LogEntryFields>();
+            return entries;
+        }
+    }
+
+    [DataMember]
+    public LogEntryFields Field
+    {
+        get
+        {
+            return Highlighter.Field;
         }
 
-        [DataMember]
-        public LogEntryFields Field
+        set
         {
-            get
-            {
-                return Highlighter.Field;
-            }
+            Highlighter.Field = value;
+        }
+    }
 
-            set
-            {
-                Highlighter.Field = value;
-            }
+    [DataMember]
+    public bool Enabled
+    {
+        get
+        {
+            return Highlighter.Enabled;
         }
 
-        [DataMember]
-        public bool Enabled
+        set
         {
-            get
-            {
-                return Highlighter.Enabled;
-            }
+            Highlighter.Enabled = value;
+        }
+    }
 
-            set
-            {
-                Highlighter.Enabled = value;
-            }
+    [DataMember]
+    public MatchMode Mode
+    {
+        get
+        {
+            return Highlighter.Mode;
         }
 
-        [DataMember]
-        public MatchMode Mode
+        set
         {
-            get
-            {
-                return Highlighter.Mode;
-            }
+            Highlighter.Mode = value;
+        }
+    }
 
-            set
-            {
-                Highlighter.Mode = value;
-            }
+    [DataMember]
+    public string Search
+    {
+        get
+        {
+            Debug.Assert(Highlighter != null, "Must have a highlighter");
+            return Highlighter.Pattern;
         }
 
-        [DataMember]
-        public string Search
+        set
         {
-            get
-            {
-                Debug.Assert(Highlighter != null, "Must have a highlighter");
-                return Highlighter.Pattern;
-            }
-
-            set
-            {
-                Highlighter.Pattern = value;
-            }
+            Highlighter.Pattern = value;
         }
+    }
 
-        public void Initialise()
+    public void Initialise()
+    {
+        Highlighter = new Highlighter
         {
-            Highlighter = new Highlighter
-            {
-                Name = "Search",
-                Style =
-                    new HighlighterStyle
-                    {
-                        Background = Colors.Lime,
-                        Foreground = Colors.Fuchsia,
-                    },
-                Field = LogEntryFields.System,
-                Mode = MatchMode.CaseSensitive,
-            };
+            Name = "Search",
+            Style =
+                new HighlighterStyle
+                {
+                    Background = Colors.Lime,
+                    Foreground = Colors.Fuchsia,
+                },
+            Field = LogEntryFields.System,
+            Mode = MatchMode.CaseSensitive,
+        };
 
-            Search = string.Empty;
-        }
+        Search = string.Empty;
     }
 }

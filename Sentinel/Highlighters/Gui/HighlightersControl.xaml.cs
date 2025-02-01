@@ -1,22 +1,21 @@
-﻿namespace Sentinel.Highlighters.Gui
+﻿namespace Sentinel.Highlighters.Gui;
+
+using System.Windows.Controls;
+
+using Sentinel.Highlighters.Interfaces;
+using Sentinel.Services;
+
+/// <summary>
+/// Interaction logic for HighlightersControl.xaml.
+/// </summary>
+public partial class HighlightersControl : UserControl
 {
-    using System.Windows.Controls;
-
-    using Sentinel.Highlighters.Interfaces;
-    using Sentinel.Services;
-
-    /// <summary>
-    /// Interaction logic for HighlightersControl.xaml.
-    /// </summary>
-    public partial class HighlightersControl : UserControl
+    public HighlightersControl()
     {
-        public HighlightersControl()
-        {
-            InitializeComponent();
-            Highlighters = ServiceLocator.Instance.Get<IHighlightingService<IHighlighter>>();
-            DataContext = this;
-        }
-
-        public IHighlightingService<IHighlighter> Highlighters { get; private set; }
+        InitializeComponent();
+        Highlighters = ServiceLocator.Instance.Get<IHighlightingService<IHighlighter>>();
+        DataContext = this;
     }
+
+    public IHighlightingService<IHighlighter> Highlighters { get; private set; }
 }
