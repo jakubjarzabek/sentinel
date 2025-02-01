@@ -1,5 +1,3 @@
-namespace Sentinel.Highlighters;
-
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
@@ -7,24 +5,26 @@ using System.Text.RegularExpressions;
 using Sentinel.Highlighters.Interfaces;
 using Sentinel.Interfaces;
 
-using WpfExtras;
+using Sentinel.WpfExtras;
+
+namespace Sentinel.Highlighters;
 
 [DataContract]
 public class Highlighter : ViewModelBase, IHighlighter
 {
-    private bool enabled = true;
+    private bool _enabled = true;
 
-    private LogEntryFields field;
+    private LogEntryFields _field;
 
-    private MatchMode mode;
+    private string _name;
 
-    private string name;
+    private IHighlighterStyle _style;
 
-    private IHighlighterStyle style;
+    private string _pattern;
 
-    private string pattern;
+    private Regex _regex;
 
-    private Regex regex;
+    private Func<string, string, bool> _matcher;
 
     public Highlighter()
     {
@@ -37,12 +37,15 @@ public class Highlighter : ViewModelBase, IHighlighter
             {
                 if (Mode == MatchMode.RegularExpression && Pattern != null)
                 {
-                    regex = new Regex(Pattern);
+                    _regex = new Regex(Pattern);
+                    SetupMatcher();
                 }
 
                 OnPropertyChanged(nameof(Description));
             }
         };
+
+        SetupMatcher();
     }
 
     protected Highlighter(string name, bool enabled, LogEntryFields field, MatchMode mode, string pattern, IHighlighterStyle style)
@@ -53,7 +56,7 @@ public class Highlighter : ViewModelBase, IHighlighter
         Mode = mode;
         Pattern = pattern;
         Style = style;
-        regex = new Regex(pattern);
+        _regex = new Regex(pattern);
 
         PropertyChanged += (sender, e) =>
         {
@@ -62,26 +65,38 @@ public class Highlighter : ViewModelBase, IHighlighter
             {
                 if (Mode == MatchMode.RegularExpression && Pattern != null)
                 {
-                    regex = new Regex(Pattern);
+                    _regex = new Regex(Pattern);
+                    SetupMatcher();
                 }
 
                 OnPropertyChanged(nameof(Description));
             }
         };
+        SetupMatcher();
+    }
+
+    private void SetupMatcher()
+    {
+        if (_mode == MatchMode.Exact)
+            _matcher = (target, pattern) => string.Equals(target, pattern, StringComparison.OrdinalIgnoreCase);
+        if (_mode == MatchMode.Contains)
+            _matcher = (target, pattern) =>  target.Contains(Pattern,  StringComparison.OrdinalIgnoreCase);
+        if (_mode == MatchMode.RegularExpression)
+            if (_regex != null)
+                _matcher = (target, pattern) => _regex.IsMatch(target);
+            else
+                _matcher = (target, pattern) => false;
     }
 
     public string Name
     {
-        get
-        {
-            return name;
-        }
+        get => _name;
 
         set
         {
-            if (name != value)
+            if (_name != value)
             {
-                name = value;
+                _name = value;
                 OnPropertyChanged(nameof(Name));
             }
         }
@@ -91,14 +106,14 @@ public class Highlighter : ViewModelBase, IHighlighter
     {
         get
         {
-            return enabled;
+            return _enabled;
         }
 
         set
         {
-            if (enabled != value)
+            if (_enabled != value)
             {
-                enabled = value;
+                _enabled = value;
                 OnPropertyChanged(nameof(Enabled));
             }
         }
@@ -108,12 +123,12 @@ public class Highlighter : ViewModelBase, IHighlighter
     {
         get
         {
-            return field;
+            return _field;
         }
 
         set
         {
-            field = value;
+            _field = value;
             OnPropertyChanged(nameof(Field));
         }
     }
@@ -122,20 +137,19 @@ public class Highlighter : ViewModelBase, IHighlighter
 
     public MatchMode Mode
     {
-        get
-        {
-            return mode;
-        }
+        get => _mode;
 
         set
         {
-            if (mode != value)
+            if (_mode != value)
             {
-                mode = value;
+                _mode = value;
                 OnPropertyChanged(nameof(Mode));
+                SetupMatcher();
             }
         }
     }
+    private MatchMode _mode;
 
     public string Description
     {
@@ -147,7 +161,7 @@ public class Highlighter : ViewModelBase, IHighlighter
                 case MatchMode.RegularExpression:
                     modeDescription = "RegEx";
                     break;
-                case MatchMode.CaseSensitive:
+                case MatchMode.Contains:
                     modeDescription = "Case sensitive";
                     break;
                 case MatchMode.CaseInsensitive:
@@ -161,16 +175,13 @@ public class Highlighter : ViewModelBase, IHighlighter
 
     public string Pattern
     {
-        get
-        {
-            return pattern;
-        }
+        get => _pattern;
 
         set
         {
-            if (pattern != value)
+            if (_pattern != value)
             {
-                pattern = value;
+                _pattern = value;
                 OnPropertyChanged(nameof(Pattern));
             }
         }
@@ -178,16 +189,13 @@ public class Highlighter : ViewModelBase, IHighlighter
 
     public IHighlighterStyle Style
     {
-        get
-        {
-            return style;
-        }
+        get => _style;
 
         set
         {
-            if (style != value)
+            if (_style != value)
             {
-                style = value;
+                _style = value;
                 OnPropertyChanged(nameof(Style));
             }
         }
@@ -207,6 +215,13 @@ public class Highlighter : ViewModelBase, IHighlighter
             return false;
         }
 
+        var target = GetTarget(logEntry);
+
+        return _matcher(target, _pattern);
+    }
+
+    private string GetTarget(ILogEntry logEntry)
+    {
         string target;
 
         switch (Field)
@@ -234,18 +249,6 @@ public class Highlighter : ViewModelBase, IHighlighter
                 break;
         }
 
-        switch (Mode)
-        {
-            case MatchMode.Exact:
-                return target.Equals(Pattern);
-            case MatchMode.CaseSensitive:
-                return target.Contains(Pattern);
-            case MatchMode.CaseInsensitive:
-                return target.ToLower().Contains(Pattern.ToLower());
-            case MatchMode.RegularExpression:
-                return regex != null && regex.IsMatch(target);
-        }
-
-        return false;
+        return target;
     }
 }

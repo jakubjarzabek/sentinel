@@ -94,7 +94,7 @@ public class SearchHighlighter : IDefaultInitialisation, ISearchHighlighter
                     Foreground = Colors.Fuchsia,
                 },
             Field = LogEntryFields.System,
-            Mode = MatchMode.CaseSensitive,
+            Mode = MatchMode.Contains,
         };
 
         Search = string.Empty;

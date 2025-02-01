@@ -142,7 +142,7 @@ public class Extractor : ViewModelBase, IExtractor
                 case MatchMode.RegularExpression:
                     modeDescription = "RegEx";
                     break;
-                case MatchMode.CaseSensitive:
+                case MatchMode.Contains:
                     modeDescription = "Substring";
                     break;
             }
@@ -197,7 +197,7 @@ public class Extractor : ViewModelBase, IExtractor
         {
             case MatchMode.Exact:
                 return !target.Equals(Pattern);
-            case MatchMode.CaseSensitive:
+            case MatchMode.Contains:
                 return !target.Contains(Pattern);
             case MatchMode.CaseInsensitive:
                 return !target.ToUpperInvariant().Contains(Pattern.ToUpperInvariant());

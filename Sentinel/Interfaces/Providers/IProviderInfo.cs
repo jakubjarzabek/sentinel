@@ -1,7 +1,6 @@
-namespace Sentinel.Interfaces.Providers;
-
-using System;
 using System.Runtime.Serialization;
+
+namespace Sentinel.Interfaces.Providers;
 
 public interface IProviderInfo
 {

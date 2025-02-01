@@ -15,10 +15,7 @@ using Sentinel.Support.Wpf;
 
 namespace Sentinel.Views.Gui;
 
-/// <summary>
-/// Interaction logic for LogMessagesControl.xaml.
-/// </summary>
-public partial class LogMessagesControl : UserControl
+public partial class LogMessagesControl
 {
     private static readonly ILog Log = LogManager.GetLogger(typeof(LogMessagesControl));
 
@@ -30,15 +27,15 @@ public partial class LogMessagesControl : UserControl
 
         Highlight = ServiceLocator.Instance.Get<IHighlightingService<IHighlighter>>();
 
-        if (Highlight is INotifyPropertyChanged)
+        if (Highlight is INotifyPropertyChanged changed)
         {
-            (Highlight as INotifyPropertyChanged).PropertyChanged += (s, e) => UpdateStyles();
+            changed.PropertyChanged += (s, e) => UpdateStyles();
         }
 
         var searchHighlighter = ServiceLocator.Instance.Get<ISearchHighlighter>();
-        if (searchHighlighter?.Highlighter is INotifyPropertyChanged)
+        if (searchHighlighter?.Highlighter is INotifyPropertyChanged propertyChanged)
         {
-            ((INotifyPropertyChanged)searchHighlighter.Highlighter).PropertyChanged += (s, e) => UpdateStyles();
+            propertyChanged.PropertyChanged += (s, e) => UpdateStyles();
         }
 
         messages.ItemContainerStyleSelector = new HighlightingSelector(Messages_OnMouseDoubleClick);

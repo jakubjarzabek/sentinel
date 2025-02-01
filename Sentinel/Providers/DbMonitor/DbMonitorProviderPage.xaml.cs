@@ -2,10 +2,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Security;
 using System.Windows.Controls;
+using Microsoft.Data.SqlClient;
 using Sentinel.Interfaces.Providers;
-using Sentinel.Providers.FileMonitor;
 using Sentinel.WpfExtras;
 
 namespace Sentinel.Providers.DbMonitor;
@@ -18,10 +17,6 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
     private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
     private readonly ReadOnlyObservableCollection<IWizardPage> readonlyChildren;
-
-    private bool loadExisting;
-
-    private double refresh;
 
     private bool warnFileNotFound;
 
@@ -36,26 +31,26 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
 
         PropertyChanged += PropertyChangedHandler;
 
-        // Need a subsequent page to define message format.
-        AddChild(new MessageFormatPage());
+        // Need a subsequent page to define columns.
+        //AddChild(new MessageFormatPage());
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
 
     public string ConnectionString
     {
-        get => connectionString;
+        get => _connectionString;
 
         set
         {
-            if (connectionString != value)
+            if (_connectionString != value)
             {
-                connectionString = value;
+                _connectionString = value;
                 OnPropertyChanged(nameof(ConnectionString));
             }
         }
     }
-    private string connectionString = string.Empty;
+    private string _connectionString = string.Empty;
 
     public string TableName
     {
@@ -100,10 +95,11 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
             }
         }
     }
+    private double refresh;
 
-    public int MaxRefresh => 5000;
+    public int MaxRefresh => 25;
 
-    public int MinRefresh => 50;
+    public int MinRefresh => 5;
 
     public bool LoadExisting
     {
@@ -118,6 +114,7 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
             }
         }
     }
+    private bool loadExisting = true;
 
     public string Title => "Log file monitoring provider";
 
@@ -125,7 +122,7 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
 
     public Control PageContent => this;
 
-    public string Description => "Configure Sentinel to monitor a file for new entries";
+    public string Description => "Configure Sentinel to monitor a db for log entries";
 
     public bool IsValid
     {
@@ -158,18 +155,14 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
     {
         get
         {
-            if (columnName != "FileName")
-            {
+            if (columnName != nameof(ConnectionString))
                 return null;
-            }
 
-            if (string.IsNullOrWhiteSpace(ConnectionString))
-            {
+            if (string.IsNullOrWhiteSpace(_connectionString))
                 return "Connection string not specified";
-            }
 
             string reason;
-            return !CheckSuppliedFilenameIsValid(ConnectionString, out reason) ? reason : null;
+            return ConnectionStringIsValid(ConnectionString, out reason) ? null : reason;
         }
     }
 
@@ -179,16 +172,17 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
 
         if (saveData is IProviderSettings settings)
         {
-            if (settings is IFileMonitoringProviderSettings fileSettings)
+            if (settings is IDbMonitoringProviderSettings fileSettings)
             {
-                fileSettings.Update(connectionString, (int)Refresh, LoadExisting);
+                fileSettings.Update(_connectionString, _tableName, (int)Refresh, LoadExisting);
                 return fileSettings;
             }
 
-            return new FileMonitoringProviderSettings(
-                settings.Info,
+            return new DbMonitoringProviderSettings(
                 settings.Name,
-                connectionString,
+                settings.Info,
+                _connectionString,
+                _tableName,
                 (int)Refresh,
                 LoadExisting);
         }
@@ -220,21 +214,19 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        Refresh = 250;
+        Refresh = MinRefresh;
     }
 
     private void PropertyChangedHandler(object sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != "FileName")
+        if (e.PropertyName != nameof(ConnectionString))
         {
             return;
         }
 
         try
         {
-            var fi = new FileInfo(ConnectionString);
-            WarnFileNotFound = !fi.Exists;
-            IsValid = this["FileName"] == null;
+            IsValid = ConnectionStringIsValid(ConnectionString, out _);
         }
         catch (Exception)
         {
@@ -244,35 +236,23 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
         }
     }
 
-    private bool CheckSuppliedFilenameIsValid(string fileNameToValidate, out string reason)
+    private bool ConnectionStringIsValid(string connectionString, out string reason)
     {
         try
         {
             reason = null;
-            _ = new FileInfo(fileNameToValidate);
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
             return true;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            reason = "The file name specified is in a location unauthorised";
-        }
-        catch (NotSupportedException)
-        {
-            reason = "The file name specified is not valid for a file.";
         }
         catch (ArgumentException)
         {
-            reason = "The file name specified is not valid for a file.";
+            reason = "The supplied connection string is invalid";
         }
-        catch (PathTooLongException)
+        catch (InvalidOperationException)
         {
-            reason = "The file name specified is too long to be a valid file.";
+            reason = "Cannot open a connection without specifying a data source or server.";
         }
-        catch (SecurityException)
-        {
-            reason = "You do not have permission to work with that file/location.";
-        }
-
         return false;
     }
 }

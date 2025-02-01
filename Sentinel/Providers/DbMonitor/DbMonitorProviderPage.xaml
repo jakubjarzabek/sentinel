@@ -97,13 +97,16 @@
                 <Slider Value="{Binding Refresh, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         Minimum="{Binding MinRefresh}"
                         Maximum="{Binding MaxRefresh}"
-                        Grid.Column="1" 
+                        IsSnapToTickEnabled="True"
+                        Grid.Row="0" Grid.Column="1"
                         Margin="3"/>
-                <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" 
+                            Grid.Row="0" Grid.Column="2" 
+                            HorizontalAlignment="Center">
                     <TextBlock Text="{Binding Refresh, StringFormat=0}"
                                Margin="10,0,10,0"
                                VerticalAlignment="Center" />
-                    <TextBlock Text="ms"
+                    <TextBlock Text="s"
                                VerticalAlignment="Center" />
                 </StackPanel>
                 <CheckBox Margin="3"
@@ -111,8 +114,8 @@
                           Grid.Column="0"
                           Grid.ColumnSpan="3"
                           IsChecked="{Binding LoadExisting, Mode=TwoWay}"
-                          Content="Load existing content from log file."
-                          ToolTip="If there are existing log entries in the file, should they be loaded into the logger?" />
+                          Content="Load existing content from db."
+                          ToolTip="If there are existing log entries in the db, should they be loaded into the logger?" />
             </Grid>
         </GroupBox>
 

@@ -162,7 +162,7 @@ public class Filter : ViewModelBase, IFilter
                 case MatchMode.RegularExpression:
                     modeDescription = "RegEx";
                     break;
-                case MatchMode.CaseSensitive:
+                case MatchMode.Contains:
                     modeDescription = "Case sensitive";
                     break;
                 case MatchMode.CaseInsensitive:
@@ -219,8 +219,8 @@ public class Filter : ViewModelBase, IFilter
         switch (Mode)
         {
             case MatchMode.Exact:
-                return target.Equals(Pattern);
-            case MatchMode.CaseSensitive:
+                return string.Equals(target, Pattern, StringComparison.OrdinalIgnoreCase);
+            case MatchMode.Contains:
                 return target.Contains(Pattern);
             case MatchMode.CaseInsensitive:
                 return target.ToLower().Contains(Pattern.ToLower());

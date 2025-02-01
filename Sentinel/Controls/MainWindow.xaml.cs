@@ -581,21 +581,18 @@ public partial class MainWindow
 
     private void PreferencesChanged(object sender, PropertyChangedEventArgs e)
     {
-        if (Preferences != null)
+        if (Preferences == null || e.PropertyName != "Show")
+            return;
+        
+        if (Preferences.Show)
         {
-            if (e.PropertyName == "Show")
-            {
-                if (Preferences.Show)
-                {
-                    preferencesWindow = new PreferencesWindow(preferencesWindowTabSelected) { Owner = this };
-                    preferencesWindow.Show();
-                }
-                else if (preferencesWindow != null)
-                {
-                    preferencesWindow.Close();
-                    preferencesWindow = null;
-                }
-            }
+            preferencesWindow = new PreferencesWindow(preferencesWindowTabSelected) { Owner = this };
+            preferencesWindow.Show();
+        }
+        else if (preferencesWindow != null)
+        {
+            preferencesWindow.Close();
+            preferencesWindow = null;
         }
     }
 

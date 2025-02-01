@@ -20,7 +20,7 @@ public enum MatchMode
     /// <summary>
     /// Case-sensitive sub-string match.
     /// </summary>
-    CaseSensitive,
+    Contains,
 
     /// <summary>
     /// Case-insensitive sub-string match.

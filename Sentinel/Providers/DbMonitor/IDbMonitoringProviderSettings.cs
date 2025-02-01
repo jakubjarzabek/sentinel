@@ -4,13 +4,13 @@ namespace Sentinel.Providers.DbMonitor;
 
 public interface IDbMonitoringProviderSettings : IProviderSettings
 {
-    string FileName { get; }
+    string ConnectionString { get; }
 
-    int RefreshPeriod { get; }
+    string TableName { get; }
+
+    int RefreshInSeconds { get; }
 
     bool LoadExistingContent { get; }
 
-    string MessageDecoder { get; set; }
-
-    void Update(string fileName, int refresh, bool loadExisting);
+    void Update(string connectionString, string tableName, int refresh, bool loadExisting);
 }
