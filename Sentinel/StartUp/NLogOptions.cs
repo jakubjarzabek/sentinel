@@ -5,12 +5,6 @@ using CommandLine;
 [Verb("nlog", HelpText = "Use nlog listener")]
 public class NLogOptions : IOptions
 {
-    public NLogOptions()
-    {
-        IsUdp = true;
-        Port = 9999;
-    }
-
     [Option('t', "tcp", SetName = "protocols")]
     public bool IsTcp
     {
@@ -18,7 +12,7 @@ public class NLogOptions : IOptions
         set => IsUdp = !value;
     }
 
-    public int Port { get; set; }
+    public int Port { get; set; } = 9999;
 
-    public bool IsUdp { get; set; }
+    public bool IsUdp { get; set; } = true;
 }

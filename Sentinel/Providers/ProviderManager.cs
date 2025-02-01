@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Linq;
 
 using Sentinel.FileMonitor;
-using Sentinel.Interfaces;
 using Sentinel.Interfaces.CodeContracts;
 using Sentinel.Interfaces.Providers;
 using Sentinel.Log4Net;
@@ -17,21 +16,15 @@ using Sentinel.Providers.Interfaces;
 
 public class ProviderManager : IProviderManager
 {
-    private readonly IList<IProviderRegistrationRecord> providers;
-
-    private readonly List<KeyValuePair<string, ILogProvider>> providerInstances =
-        new List<KeyValuePair<string, ILogProvider>>();
-
-    public ProviderManager()
+    private readonly IList<IProviderRegistrationRecord> providers = new List<IProviderRegistrationRecord>
     {
-        providers = new List<IProviderRegistrationRecord>
-        {
-            NLogViewerProvider.ProviderRegistrationInformation,
-            Log4NetProvider.ProviderRegistrationInformation,
-            FileMonitoringProvider.ProviderRegistrationInformation,
-            MsBuildProvider.ProviderRegistrationRecord,
-        };
-    }
+        NLogViewerProvider.ProviderRegistrationInformation,
+        Log4NetProvider.ProviderRegistrationInformation,
+        FileMonitoringProvider.ProviderRegistrationInformation,
+        MsBuildProvider.ProviderRegistrationRecord,
+    };
+
+    private readonly List<KeyValuePair<string, ILogProvider>> providerInstances = [];
 
     public IEnumerable<Guid> Registered => providers.Select(p => p.Identifier);
 
@@ -44,7 +37,7 @@ public class ProviderManager : IProviderManager
 
     public ILogProvider Create(Guid providerGuid, IProviderSettings settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         // Make sure we don't have any instances of that providerGuid.
         if (providerInstances.Any(p => p.Key == settings.Name && p.Value.Information.Identifier == providerGuid))
@@ -146,7 +139,7 @@ public class ProviderManager : IProviderManager
             return (T)Activator.CreateInstance(match);
         }
 
-        return default(T);
+        return default;
     }
 
     public IEnumerator<Guid> GetEnumerator()

@@ -1,17 +1,10 @@
-namespace Sentinel.Support.Converters;
-
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Windows.Data;
-
 using log4net;
-
 using NodaTime;
-
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
+
+namespace Sentinel.Support.Converters;
 
 public class DatePreferenceConverter : IValueConverter
 {
@@ -71,7 +64,7 @@ public class DatePreferenceConverter : IValueConverter
 
     private static string GetDateDisplayFormat(int setting, IEnumerable<string> settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         var dateFormatSource = settings.ElementAt(setting);
 

@@ -96,7 +96,7 @@ public class TypeToImageService : ViewModelBase, ITypeImageService, IDefaultInit
         ImageOptions options)
     {
         type.ThrowIfNullOrWhiteSpace(nameof(type));
-        options.ThrowIfNull(nameof(options));
+        ArgumentNullException.ThrowIfNull(options);
 
         var quality = options.Quality;
 

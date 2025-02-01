@@ -1,10 +1,10 @@
-﻿namespace Sentinel.Logs.Gui;
-
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Controls;
 
-using WpfExtras;
+using Sentinel.WpfExtras;
+
+namespace Sentinel.Logs.Gui;
 
 /// <summary>
 /// Interaction logic for AddNewLoggerPage.xaml.
@@ -32,10 +32,7 @@ public partial class AddNewLoggerWelcomePage : IWizardPage
 
     public string Title
     {
-        get
-        {
-            return title;
-        }
+        get => title;
 
         private set
         {
@@ -49,10 +46,7 @@ public partial class AddNewLoggerWelcomePage : IWizardPage
 
     public string Description
     {
-        get
-        {
-            return description;
-        }
+        get => description;
 
         private set
         {

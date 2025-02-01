@@ -10,7 +10,7 @@ public class MetaDataParameterConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        values.ThrowIfNull(nameof(values));
+        ArgumentNullException.ThrowIfNull(values);
 
         if (values.Length != 2)
         {
@@ -29,12 +29,7 @@ public class MetaDataParameterConverter : IMultiValueConverter
             throw new ArgumentException("Second value in values[] must be a string");
         }
 
-        if (meta.TryGetValue(member, out var metaDataValue))
-        {
-            return metaDataValue;
-        }
-
-        return string.Empty;
+        return meta.TryGetValue(member, out var metaDataValue) ? metaDataValue : string.Empty;
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

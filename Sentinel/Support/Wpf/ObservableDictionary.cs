@@ -1,14 +1,11 @@
-﻿namespace Sentinel.Support.Wpf;
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using Sentinel.Interfaces.CodeContracts;
+
+namespace Sentinel.Support.Wpf;
 
 [Serializable]
 public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
@@ -36,7 +33,7 @@ public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
 
     public ObservableDictionary(IDictionary<TKey, TValue> dictionary)
     {
-        dictionary.ThrowIfNull(nameof(dictionary));
+        ArgumentNullException.ThrowIfNull(dictionary);
 
         KeyedEntryCollection = new KeyedDictionaryEntryCollection();
 
@@ -53,7 +50,7 @@ public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
 
     public ObservableDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey> comparer)
     {
-        dictionary.ThrowIfNull(nameof(dictionary));
+        ArgumentNullException.ThrowIfNull(dictionary);
 
         KeyedEntryCollection = new KeyedDictionaryEntryCollection(comparer);
 
@@ -185,7 +182,7 @@ public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
 
     public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-        info.ThrowIfNull(nameof(info));
+        ArgumentNullException.ThrowIfNull(info);
 
         var entries = new Collection<DictionaryEntry>();
         foreach (var entry in KeyedEntryCollection)
@@ -274,7 +271,7 @@ public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
 
     void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
     {
-        array.ThrowIfNull(nameof(array));
+        ArgumentNullException.ThrowIfNull(array);
 
         if (index < 0 || index > array.Length)
         {

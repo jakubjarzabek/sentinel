@@ -1,19 +1,13 @@
-namespace Sentinel.MSBuild;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using log4net;
 using Newtonsoft.Json.Linq;
 
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
 using Sentinel.Interfaces.Providers;
+
+namespace Sentinel.MSBuild;
 
 public class MsBuildProvider : INetworkProvider
 {
@@ -32,10 +26,10 @@ public class MsBuildProvider : INetworkProvider
 
     public MsBuildProvider(IProviderSettings settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         Settings = settings as IMsBuildListenerSettings;
-        Settings.ThrowIfNull(nameof(Settings));
+        ArgumentNullException.ThrowIfNull(Settings);
 
         ProviderSettings = settings;
     }

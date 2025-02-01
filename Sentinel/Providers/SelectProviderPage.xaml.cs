@@ -73,13 +73,7 @@ public partial class SelectProviderPage : IWizardPage
 
     public event PropertyChangedEventHandler PropertyChanged;
 
-    public IEnumerable<string> Providers
-    {
-        get
-        {
-            return providers.Select(i => i.Name);
-        }
-    }
+    public IEnumerable<string> Providers => providers.Select(i => i.Name);
 
     public int SelectedProvider
     {
@@ -100,13 +94,7 @@ public partial class SelectProviderPage : IWizardPage
         }
     }
 
-    public string Title
-    {
-        get
-        {
-            return "Select Provider";
-        }
-    }
+    public string Title => "Select Provider";
 
     public string LoggerName
     {
@@ -178,7 +166,7 @@ public partial class SelectProviderPage : IWizardPage
 
     public object Save(object saveData)
     {
-        if (!(saveData is ProviderSettings))
+        if (saveData is not ProviderSettings)
         {
             saveData = new ProviderSettings();
         }

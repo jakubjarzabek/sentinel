@@ -1,18 +1,13 @@
-﻿namespace Sentinel.NLog;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 using log4net;
 using Sentinel.Interfaces;
 using Sentinel.Interfaces.CodeContracts;
 using Sentinel.Interfaces.Providers;
+
+namespace Sentinel.NLog;
 
 public class NLogViewerProvider : INetworkProvider
 {
@@ -43,10 +38,10 @@ public class NLogViewerProvider : INetworkProvider
 
     public NLogViewerProvider(IProviderSettings settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         networkSettings = settings as INLogAppenderSettings;
-        networkSettings.ThrowIfNull(nameof(networkSettings));
+        ArgumentNullException.ThrowIfNull(networkSettings);
 
         Information = ProviderRegistrationInformation.Info;
         ProviderSettings = networkSettings;
@@ -111,7 +106,7 @@ public class NLogViewerProvider : INetworkProvider
         if (networkSettings == null)
         {
             Log.Error("Network settings has not been initialized");
-            throw new NullReferenceException();
+            throw new InvalidOperationException("Network settings has not been initialized");
         }
 
         while (!cancellationTokenSource.IsCancellationRequested)

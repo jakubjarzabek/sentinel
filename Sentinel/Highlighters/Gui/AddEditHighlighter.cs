@@ -1,16 +1,12 @@
-namespace Sentinel.Highlighters.Gui;
-
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
 
-using WpfExtras;
+using Sentinel.WpfExtras;
+
+namespace Sentinel.Highlighters.Gui;
 
 public class AddEditHighlighter : ViewModelBase
 {
@@ -24,9 +20,9 @@ public class AddEditHighlighter : ViewModelBase
 
     private int foregroundColourIndex;
 
-    private bool overrideBackgroundColour = false;
+    private bool overrideBackgroundColour;
 
-    private bool overrideForegroundColour = false;
+    private bool overrideForegroundColour;
 
     private string name = "Untitled";
 
@@ -63,7 +59,7 @@ public class AddEditHighlighter : ViewModelBase
         set
         {
             var find = colours.FirstOrDefault(r => r.Value == value);
-            find.Key.ThrowIfNull(nameof(find.Key));
+            ArgumentNullException.ThrowIfNull(find.Key);
 
             var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
             BackgroundColourIndex = index;
@@ -117,7 +113,7 @@ public class AddEditHighlighter : ViewModelBase
         set
         {
             var find = colours.FirstOrDefault(r => r.Value == value);
-            find.Key.ThrowIfNull(nameof(find.Key));
+            ArgumentNullException.ThrowIfNull(find.Key);
 
             var index = colours.Keys.OrderBy(n => n).ToList().IndexOf(find.Key);
             ForegroundColourIndex = index;

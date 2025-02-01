@@ -14,7 +14,7 @@ public static class XElementHelpers
 
     public static string GetAttribute(this XElement element, string attributeName, string defaultValue)
     {
-        element.ThrowIfNull(nameof(element));
+        ArgumentNullException.ThrowIfNull(element);
 
         if (!element.HasAttributes)
         {

@@ -1,19 +1,12 @@
-﻿namespace Sentinel.Support;
-
-using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
-using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
+namespace Sentinel.Support;
 
 public static class GridViewSort
 {
@@ -120,7 +113,7 @@ public static class GridViewSort
         ListView listView,
         GridViewColumnHeader sortedColumnHeader)
     {
-        view.ThrowIfNull(nameof(view));
+        ArgumentNullException.ThrowIfNull(view);
 
         var direction = ListSortDirection.Ascending;
         if (view.SortDescriptions.Count > 0)
@@ -176,77 +169,77 @@ public static class GridViewSort
     // Using a DependencyProperty as the backing store for Command.  This enables animation, styling, binding, etc...
     public static bool GetAutoSort(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (bool)dependencyObject.GetValue(AutoSortProperty);
     }
 
     public static ICommand GetCommand(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (ICommand)dependencyObject.GetValue(CommandProperty);
     }
 
     // Using a DependencyProperty as the backing store for AutoSort.  This enables animation, styling, binding, etc...
     public static string GetPropertyName(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (string)dependencyObject.GetValue(PropertyNameProperty);
     }
 
     // Using a DependencyProperty as the backing store for PropertyName.  This enables animation, styling, binding, etc...
     public static bool GetShowSortGlyph(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (bool)dependencyObject.GetValue(ShowSortGlyphProperty);
     }
 
     // Using a DependencyProperty as the backing store for ShowSortGlyph.  This enables animation, styling, binding, etc...
     public static ImageSource GetSortGlyphAscending(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (ImageSource)dependencyObject.GetValue(SortGlyphAscendingProperty);
     }
 
     // Using a DependencyProperty as the backing store for SortGlyphAscending.  This enables animation, styling, binding, etc...
     public static ImageSource GetSortGlyphDescending(DependencyObject dependencyObject)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         return (ImageSource)dependencyObject.GetValue(SortGlyphDescendingProperty);
     }
 
     public static void SetAutoSort(DependencyObject dependencyObject, bool value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(AutoSortProperty, value);
     }
 
     public static void SetCommand(DependencyObject dependencyObject, ICommand value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(CommandProperty, value);
     }
 
     public static void SetPropertyName(DependencyObject dependencyObject, string value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(PropertyNameProperty, value);
     }
 
     public static void SetShowSortGlyph(DependencyObject dependencyObject, bool value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(ShowSortGlyphProperty, value);
     }
 
     public static void SetSortGlyphAscending(DependencyObject dependencyObject, ImageSource value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(SortGlyphAscendingProperty, value);
     }
 
     public static void SetSortGlyphDescending(DependencyObject dependencyObject, ImageSource value)
     {
-        dependencyObject.ThrowIfNull(nameof(dependencyObject));
+        ArgumentNullException.ThrowIfNull(dependencyObject);
         dependencyObject.SetValue(SortGlyphDescendingProperty, value);
     }
 

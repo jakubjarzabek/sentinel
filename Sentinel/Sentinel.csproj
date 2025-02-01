@@ -82,4 +82,8 @@
     <Resource Include="Resources\Small\Unknown.png" />
     <Resource Include="Resources\Small\Warning.png" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Using Include="System.Windows"/>
+  </ItemGroup>
 </Project>

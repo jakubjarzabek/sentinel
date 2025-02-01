@@ -1,13 +1,7 @@
-﻿namespace Sentinel.Services;
-
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Windows;
 
 using Newtonsoft.Json.Linq;
 
@@ -38,6 +32,8 @@ using Sentinel.Support;
 using Sentinel.Views;
 using Sentinel.Views.Gui;
 using Sentinel.Views.Interfaces;
+
+namespace Sentinel.Services;
 
 using WpfExtras;
 

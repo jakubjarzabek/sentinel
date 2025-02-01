@@ -195,7 +195,7 @@ public class HighlightingSelector : StyleSelector
 
     private void RegisterDoubleClickEvent(Style style, Action<object, MouseButtonEventArgs> handler)
     {
-        style.ThrowIfNull(nameof(style));
+        ArgumentNullException.ThrowIfNull(style);
         style.Setters.Add(new EventSetter(Control.MouseDoubleClickEvent, new MouseButtonEventHandler(handler)));
     }
 }

@@ -1,15 +1,11 @@
-namespace Sentinel.Support.Converters;
-
-using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Data;
 
 using log4net;
-    
 using NodaTime;
-    
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
+
+namespace Sentinel.Support.Converters;
 
 public class TimePreferenceConverter : IValueConverter
 {
@@ -68,7 +64,7 @@ public class TimePreferenceConverter : IValueConverter
 
     private static string GetDateDisplayFormat(int setting, IEnumerable<string> settings, bool convertToLocalIfUtc)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         var dateFormatSource = settings.ElementAt(setting);
         var dateFormat = dateFormatSource.Replace("-", "'-'").Replace(":", "':'");

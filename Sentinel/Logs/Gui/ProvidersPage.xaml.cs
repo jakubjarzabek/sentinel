@@ -1,11 +1,7 @@
-﻿namespace Sentinel.Logs.Gui;
-
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using log4net;
@@ -14,14 +10,16 @@ using Sentinel.NLog;
 using Sentinel.Providers.Interfaces;
 using Sentinel.Services;
 
-using WpfExtras;
+using Sentinel.WpfExtras;
+
+namespace Sentinel.Logs.Gui;
 
 /// <summary>
 /// Interaction logic for ProvidersPage.xaml.
 /// </summary>
 public partial class ProvidersPage : IWizardPage, IDataErrorInfo
 {
-    private static readonly ILog Log = LogManager.GetLogger(typeof(ProvidersPage));
+    private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(ProvidersPage));
 
     private readonly ObservableCollection<IWizardPage> children = new ObservableCollection<IWizardPage>();
 
@@ -101,13 +99,7 @@ public partial class ProvidersPage : IWizardPage, IDataErrorInfo
     /// <returns>
     /// An error message indicating what is wrong with this object. The default is an empty string ("").
     /// </returns>
-    public string Error
-    {
-        get
-        {
-            return this["Providers"];
-        }
-    }
+    public string Error => this["Providers"];
 
     /// <summary>
     /// Gets the error message for the property with the given name.
@@ -116,19 +108,7 @@ public partial class ProvidersPage : IWizardPage, IDataErrorInfo
     /// The error message for the property. The default is an empty string ("").
     /// </returns>
     /// <param name="columnName">The name of the property whose error message to get.</param>
-    public string this[string columnName]
-    {
-        get
-        {
-            switch (columnName)
-            {
-                case "Providers":
-                    return ValidateProviders();
-            }
-
-            return null;
-        }
-    }
+    public string? this[string columnName] => columnName == "Providers" ? ValidateProviders() : null;
 
     public void AddChild(IWizardPage newItem)
     {

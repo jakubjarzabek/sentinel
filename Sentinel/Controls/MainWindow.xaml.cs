@@ -1,15 +1,9 @@
-﻿namespace Sentinel.Controls;
-
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Controls.Ribbon;
@@ -23,7 +17,6 @@ using Sentinel.Extractors.Interfaces;
 using Sentinel.Filters.Interfaces;
 using Sentinel.Highlighters.Interfaces;
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
 using Sentinel.Log4Net;
 using Sentinel.Logs.Interfaces;
 using Sentinel.NLog;
@@ -33,15 +26,17 @@ using Sentinel.Services.Interfaces;
 using Sentinel.StartUp;
 using Sentinel.Support;
 using Sentinel.Views.Interfaces;
-using WpfExtras;
-using WpfExtras.Converters;
+using Sentinel.WpfExtras;
+using Sentinel.WpfExtras.Converters;
+
+namespace Sentinel.Controls;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml.
 /// </summary>
 public partial class MainWindow
 {
-    private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(MainWindow));
+    private static readonly ILog Log = LogManager.GetLogger(typeof(MainWindow));
 
     private readonly string persistingFilename;
 
@@ -445,7 +440,7 @@ public partial class MainWindow
 
     private void ProcessCommandLine(IEnumerable<string> commandLine)
     {
-        commandLine.ThrowIfNull(nameof(commandLine));
+        ArgumentNullException.ThrowIfNull(commandLine);
 
         var commandLineArguments = commandLine as string[] ?? commandLine.ToArray();
         if (!commandLineArguments.Any())
@@ -633,29 +628,29 @@ public partial class MainWindow
 
     private void RetainOnlyStandardFilters(object sender, FilterEventArgs e)
     {
-        sender.ThrowIfNull(nameof(sender));
-        e.ThrowIfNull(nameof(e));
+        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(e);
         e.Accepted = e.Item is IStandardDebuggingFilter;
     }
 
     private void ExcludeStandardFilters(object sender, FilterEventArgs e)
     {
-        sender.ThrowIfNull(nameof(sender));
-        e.ThrowIfNull(nameof(e));
+        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(e);
         e.Accepted = !(e.Item is IStandardDebuggingFilter || e.Item is ISearchFilter);
     }
 
     private void RetainOnlyStandardHighlighters(object sender, FilterEventArgs e)
     {
-        sender.ThrowIfNull(nameof(sender));
-        e.ThrowIfNull(nameof(e));
+        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(e);
         e.Accepted = e.Item is IStandardDebuggingHighlighter;
     }
 
     private void ExcludeStandardHighlighters(object sender, FilterEventArgs e)
     {
-        sender.ThrowIfNull(nameof(sender));
-        e.ThrowIfNull(nameof(e));
+        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(e);
         e.Accepted = !(e.Item is IStandardDebuggingHighlighter);
     }
 

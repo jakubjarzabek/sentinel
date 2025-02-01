@@ -41,7 +41,7 @@ public class FileMonitoringProvider : ILogProvider, IDisposable
         Justification = "Both Worker and PurgeWorker are disposed in the IDispose implementation (or finalizer)")]
     public FileMonitoringProvider(IProviderSettings settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         var fileSettings = settings as IFileMonitoringProviderSettings;
 

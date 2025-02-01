@@ -1,10 +1,6 @@
-﻿namespace Sentinel.Views.Gui;
-
-using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -12,11 +8,12 @@ using log4net;
 using Sentinel.Highlighters;
 using Sentinel.Highlighters.Interfaces;
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
 
 using Sentinel.Services;
 using Sentinel.Support;
 using Sentinel.Support.Wpf;
+
+namespace Sentinel.Views.Gui;
 
 /// <summary>
 /// Interaction logic for LogMessagesControl.xaml.
@@ -123,7 +120,7 @@ public partial class LogMessagesControl : UserControl
 
     private void BindTimeColumn(GridViewColumn column)
     {
-        column.ThrowIfNull(nameof(column));
+        ArgumentNullException.ThrowIfNull(column);
 
         var converter = (IValueConverter)Resources["TimePreferenceConverter"];
         column.DisplayMemberBinding = new Binding(".") { Converter = converter, ConverterParameter = Preferences };
@@ -131,7 +128,7 @@ public partial class LogMessagesControl : UserControl
 
     private void BindDateColumn(GridViewColumn column)
     {
-        column.ThrowIfNull(nameof(column));
+        ArgumentNullException.ThrowIfNull(column);
 
         var converter = (IValueConverter)Resources["DatePreferenceConverter"];
         column.DisplayMemberBinding = new Binding(".") { Converter = converter, ConverterParameter = Preferences };
@@ -145,23 +142,20 @@ public partial class LogMessagesControl : UserControl
 
     private void Messages_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        sender.ThrowIfNull(nameof(sender));
+        ArgumentNullException.ThrowIfNull(sender);
 
-        if (DoubleClickToShowExceptions)
+        if (!DoubleClickToShowExceptions)
+            return;
+
+        if (sender is not ListViewItem item)
+            return;
+
+        Log.Debug("Double click performed on entry");
+
+        if (item.HasContent && item.Content is ILogEntry entry)
         {
-            if (sender is ListViewItem item)
-            {
-                Log.Debug("Double click performed on entry");
-
-                if (item.HasContent)
-                {
-                    if (item.Content is ILogEntry entry)
-                    {
-                        Log.Debug(entry.Type);
-                        Log.Debug(entry.Description);
-                    }
-                }
-            }
+            Log.Debug(entry.Type);
+            Log.Debug(entry.Description);
         }
     }
 

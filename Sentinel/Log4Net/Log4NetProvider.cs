@@ -1,18 +1,12 @@
-﻿namespace Sentinel.Log4Net;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 using log4net;
 using Sentinel.Interfaces;
-using Sentinel.Interfaces.CodeContracts;
 using Sentinel.Interfaces.Providers;
+
+namespace Sentinel.Log4Net;
 
 public class Log4NetProvider : INetworkProvider
 {
@@ -41,10 +35,10 @@ public class Log4NetProvider : INetworkProvider
 
     public Log4NetProvider(IProviderSettings settings)
     {
-        settings.ThrowIfNull(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         udpSettings = settings as IUdpAppenderListenerSettings;
-        udpSettings.ThrowIfNull(nameof(udpSettings));
+        ArgumentNullException.ThrowIfNull(udpSettings);
 
         Information = ProviderRegistrationInformation.Info;
         ProviderSettings = udpSettings;
@@ -345,9 +339,8 @@ public class Log4NetProvider : INetworkProvider
 
     private void AddExceptionIfFound(XElement entryEvent, Dictionary<string, object> metaData, XNamespace @namespace)
     {
-        entryEvent.ThrowIfNull(nameof(entryEvent));
-
-        metaData.ThrowIfNull(nameof(metaData));
+        ArgumentNullException.ThrowIfNull(entryEvent);
+        ArgumentNullException.ThrowIfNull(metaData);
 
         var exceptionElement = entryEvent.Element(@namespace + "exception");
         if (exceptionElement != null)

@@ -1,18 +1,11 @@
-﻿namespace Sentinel.Logs.Gui;
+﻿using System.Diagnostics;
+using Sentinel.WpfExtras;
 
-using System.Diagnostics;
-using System.Windows;
-
-using WpfExtras;
+namespace Sentinel.Logs.Gui;
 
 public class NewLoggerWizard
 {
-    public NewLoggerWizard()
-    {
-        Settings = new NewLoggerSettings();
-    }
-
-    public NewLoggerSettings Settings { get; private set; }
+    public NewLoggerSettings Settings { get; private set; } = new();
 
     public bool Display(Window parent)
     {
