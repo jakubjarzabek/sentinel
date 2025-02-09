@@ -8,7 +8,7 @@ using Sentinel.Support.Wpf;
 using WpfExtras;
 
 /// <summary>
-/// An implementation of the IUserPreferences which holds all of the user
+/// An implementation of the IUserPreferences which holds all the user
 /// selections in a view-model based structure, allowing simple binding to
 /// the contents for GUIs whilst also allowing other interested parties to
 /// register to elements to be notified when they change.
@@ -77,17 +77,17 @@ public class UserPreferences : ViewModelBase, IUserPreferences
     /// <summary>
     /// Gets an enumerable list of the available date formatting options.
     /// </summary>
-    public IEnumerable<string> DateFormatOptions { get; } = new[]
-    {
+    public IEnumerable<string> DateFormatOptions { get; } =
+    [
         "yyyy-MM-dd",
         "MMM-dd",
         "dd-MM-yyyy",
         "dd-MMM",
         "MM-dd-yyyy",
-        "dddd",
-    };
+        "dddd"
+    ];
 
-    public IEnumerable<string> TimeFormatOptions { get; } = new[] { "HH:mm:ss;FFFF", "HH:mm:ss", "HH:mm" };
+    public IEnumerable<string> TimeFormatOptions { get; } = ["HH:mm:ss;FFFF", "HH:mm:ss", "HH:mm"];
 
     /// <summary>
     /// Gets or sets the selected date option, as a index of the available options.

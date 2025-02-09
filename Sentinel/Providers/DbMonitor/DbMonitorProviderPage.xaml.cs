@@ -65,7 +65,7 @@ public partial class DbMonitorProviderPage : IWizardPage, IDataErrorInfo
             }
         }
     }
-    private string _tableName = string.Empty;
+    private string _tableName = "Log";
 
     public bool WarnFileNotFound
     {

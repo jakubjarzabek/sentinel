@@ -179,15 +179,13 @@ public partial class MainWindow
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-            if (messageBoxResult == MessageBoxResult.Yes)
-            {
-                frame.Log.Enabled = false;
-                restartLogging = true;
-            }
-            else
+            if (messageBoxResult != MessageBoxResult.Yes)
             {
                 return;
             }
+
+            frame.Log.Enabled = false;
+            restartLogging = true;
         }
 
         // Open a save file dialog
@@ -299,9 +297,7 @@ public partial class MainWindow
                 MessageBoxImage.Warning);
 
             if (userResult == MessageBoxResult.Cancel)
-            {
                 return;
-            }
 
             if (userResult == MessageBoxResult.Yes)
             {
@@ -326,14 +322,10 @@ public partial class MainWindow
                 FilterIndex = 0,
             };
 
-            if (openFile.ShowDialog(this) == true)
-            {
-                fileNameToLoad = openFile.FileName;
-            }
-            else
-            {
+            if (openFile.ShowDialog(this) != true)
                 return;
-            }
+
+            fileNameToLoad = openFile.FileName;
         }
 
         // Remove the tab control.

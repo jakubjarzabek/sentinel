@@ -13,19 +13,25 @@ public class DbMonitoringProviderSettings : IDbMonitoringProviderSettings
 
     public string ConnectionString { get; private set; }
 
-    public string TableName { get; private set;}
+    public string TableName { get; private set; }
 
-    public int RefreshInSeconds { get; private set;}
+    public int RefreshInSeconds { get; private set; }
 
-    public bool LoadExistingContent { get; private set;}
+    public bool LoadExistingContent { get; private set; }
 
-    public DbMonitoringProviderSettings(string name, IProviderInfo info, string connectionString, string tableName, int refreshPeriod, bool loadExistingContent)
+    public DbMonitoringProviderSettings(
+        string name, 
+        IProviderInfo info, 
+        string connectionString, 
+        string tableName,
+        int refreshInSeconds, 
+        bool loadExistingContent)
     {
         Name = name;
         Info = info;
         ConnectionString = connectionString;
         TableName = tableName;
-        RefreshInSeconds = refreshPeriod;
+        RefreshInSeconds = refreshInSeconds;
         LoadExistingContent = loadExistingContent;
     }
 
