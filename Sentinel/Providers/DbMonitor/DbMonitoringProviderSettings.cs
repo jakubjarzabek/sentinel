@@ -20,11 +20,11 @@ public class DbMonitoringProviderSettings : IDbMonitoringProviderSettings
     public bool LoadExistingContent { get; private set; }
 
     public DbMonitoringProviderSettings(
-        string name, 
-        IProviderInfo info, 
-        string connectionString, 
+        string name,
+        IProviderInfo info,
+        string connectionString,
         string tableName,
-        int refreshInSeconds, 
+        int refreshInSeconds,
         bool loadExistingContent)
     {
         Name = name;

@@ -285,10 +285,10 @@ public partial class MainWindow
 
     private void LoadSessionAction(object obj)
     {
-        var sessionManager = ServiceLocator.Instance.Get<ISessionManager>();
+        var sessionManager = ServiceLocator.Instance.Get<ISessionManager>()!;
         var fileNameToLoad = (string)obj;
 
-        if (!sessionManager.IsSaved)
+        if (!sessionManager.IsSaved && sessionManager.IsDirty)
         {
             var userResult = MessageBox.Show(
                 "Do you want to save changes you made to " + sessionManager.Name + "?",

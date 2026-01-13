@@ -28,6 +28,8 @@ public interface ISessionManager
     /// </summary>
     bool IsSaved { get; set; }
 
+    bool IsDirty { get; set; }
+
     /// <summary>
     /// Called when loading a brand new session.
     /// </summary>

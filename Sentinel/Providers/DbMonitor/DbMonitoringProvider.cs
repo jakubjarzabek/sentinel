@@ -10,17 +10,19 @@ namespace Sentinel.Providers.DbMonitor;
 
 public class DbMonitoringProvider : ILogProvider, IDisposable
 {
+    private ManualResetEventSlim _notifier = new ManualResetEventSlim();
+
     private static readonly ILog Log = LogManager.GetLogger(nameof(DbMonitoringProvider));
 
-    private readonly bool loadExistingContent;
+    private readonly bool _loadExistingContent;
 
-    private readonly Queue<ILogEntry> pendingQueue = new Queue<ILogEntry>();
+    private readonly Queue<ILogEntry> _pendingQueue = new Queue<ILogEntry>();
 
     private readonly PeriodicTimer _refreshTimer;
 
     private long _lastIdRead;
 
-    private string _tableName;
+    private readonly string _tableName;
 
     public static IProviderRegistrationRecord ProviderRegistrationInformation { get; } =
         new ProviderRegistrationInformation(new ProviderInfo());
@@ -57,7 +59,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
         ConnectionString = dbSettings.ConnectionString;
         Information = settings.Info;
         _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(dbSettings.RefreshInSeconds));
-        loadExistingContent = dbSettings.LoadExistingContent;
+        _loadExistingContent = dbSettings.LoadExistingContent;
         _tableName = dbSettings.TableName;
 
         // Chain up callbacks to the workers.
@@ -70,7 +72,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
         Debug.Assert(!string.IsNullOrEmpty(ConnectionString), "Filename not specified");
         Debug.Assert(Logger != null, "No logger has been registered, this is required before starting a provider");
 
-        lock (pendingQueue)
+        lock (_pendingQueue)
         {
             Log.DebugFormat(CultureInfo.InvariantCulture, "Starting of monitoring db");
         }
@@ -94,22 +96,24 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
         }
     }
 
-    private void PurgeWorkerDoWork(object sender, DoWorkEventArgs e)
+    private void PurgeWorkerDoWork(object? sender, DoWorkEventArgs e)
     {
         while (!e.Cancel)
         {
+            _notifier.Wait();
+            _notifier.Reset();
             // Go to sleep.
-            Thread.Sleep(_refreshTimer.Period);
+            //Thread.Sleep(_refreshTimer.Period);
 
-            lock (pendingQueue)
+            lock (_pendingQueue)
             {
-                if (pendingQueue.Any())
-                {
-                    Log.DebugFormat(CultureInfo.InvariantCulture, "Adding a batch of {0} entries to the logger",
-                        pendingQueue.Count);
-                    Logger.AddBatch(pendingQueue);
-                    Trace.WriteLine("Done adding the batch");
-                }
+                if (_pendingQueue.Count == 0)
+                    continue;
+
+                Log.DebugFormat(CultureInfo.InvariantCulture, "Adding a batch of {0} entries to the logger",
+                    _pendingQueue.Count);
+                Logger.AddBatch(_pendingQueue);
+                Trace.WriteLine("Done adding the batch");
             }
         }
     }
@@ -136,7 +140,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
         await sqlConn.OpenAsync(cancellationToken);
 
         var sqlCommand = sqlConn.CreateCommand();
-        if (!loadExistingContent)
+        if (!_loadExistingContent)
         {
             sqlCommand.CommandText = $"select max(id) from {_tableName}";
             var maxId = await sqlCommand.ExecuteScalarAsync(cancellationToken);
@@ -154,7 +158,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
     {
         await LoadId(cancellationToken);
         await ReadLogs(cancellationToken);
-        
+
         while (!cancellationToken.IsCancellationRequested
                && await _refreshTimer.WaitForNextTickAsync(cancellationToken))
         {
@@ -166,7 +170,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
     {
         await using var sqlConn = new SqlConnection(ConnectionString);
         await sqlConn.OpenAsync(cancellationToken);
-        
+
         var sqlCommand = sqlConn.CreateCommand();
         sqlCommand.CommandText = $"""
                                   select * from {_tableName} 
@@ -176,7 +180,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
 
         await using var reader = await sqlCommand.ExecuteReaderAsync(cancellationToken);
         int idIndex = reader.GetOrdinal("Id");
-        var dbIndices = new DbIndices(idIndex, 
+        var dbIndices = new DbIndices(idIndex,
             reader.GetOrdinal("Date"),
             reader.GetOrdinal("Logger"),
             reader.GetOrdinal("Level"),
@@ -186,9 +190,11 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
         {
             var entry = ReadEntry(reader, dbIndices);
             _lastIdRead = Math.Max(_lastIdRead, reader.GetInt32(idIndex));
-            lock (pendingQueue)
-                pendingQueue.Enqueue(entry);
+            lock (_pendingQueue)
+                _pendingQueue.Enqueue(entry);
         }
+
+        _notifier.Set();
     }
 
     private ILogEntry ReadEntry(SqlDataReader reader, DbIndices dbIndices)
@@ -201,7 +207,7 @@ public class DbMonitoringProvider : ILogProvider, IDisposable
             Description = reader.GetString(dbIndices.Message),
             MetaData = new Dictionary<string, object>(),
         };
-        
+
         if (!reader.IsDBNull(dbIndices.Exception))
         {
             var exc = reader.GetString(dbIndices.Exception);

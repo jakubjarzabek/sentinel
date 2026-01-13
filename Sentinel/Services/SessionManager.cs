@@ -2,9 +2,7 @@
 using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
-
 using Newtonsoft.Json.Linq;
-
 using Sentinel.Classification;
 using Sentinel.Classification.Interfaces;
 using Sentinel.Extractors;
@@ -33,10 +31,10 @@ using Sentinel.Support;
 using Sentinel.Views;
 using Sentinel.Views.Gui;
 using Sentinel.Views.Interfaces;
+using Sentinel.WpfExtras;
 
 namespace Sentinel.Services;
 
-using WpfExtras;
 
 [DataContract]
 public class SessionManager : ISessionManager
@@ -54,6 +52,8 @@ public class SessionManager : ISessionManager
     public IEnumerable<ViewModelBase> ChangingViewModelBases { get; set; }
 
     public bool IsSaved { get; set; }
+    
+    public bool IsDirty { get; set; }
 
     public string Name { get; private set; }
 
@@ -86,7 +86,7 @@ public class SessionManager : ISessionManager
 
         // Set session properties
         Name = settings.LogName;
-
+        IsDirty = true;
         ConfigureLoggerServices(settings.LogName, settings.Views, settings.Providers);
 
         IsSaved = false;

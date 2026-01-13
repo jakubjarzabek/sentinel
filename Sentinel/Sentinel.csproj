@@ -7,6 +7,7 @@
     <AssemblyName>Sentinel</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ApplicationIcon>Sentinel.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
