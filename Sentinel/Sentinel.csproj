@@ -6,6 +6,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Sentinel</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

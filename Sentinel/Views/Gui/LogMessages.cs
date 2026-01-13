@@ -25,11 +25,11 @@ public class LogMessages : ViewModelBase, ILogViewer
 
     private const string DESCRIPTION = "Traditional row based log view with highlighting and incremental search.";
 
-    private readonly IFilteringService<IFilter> filteringService;
+    private readonly IFilteringService<IFilter>? _filteringService;
 
-    private readonly IExtractingService<IExtractor> extractingService;
+    private readonly IExtractingService<IExtractor>? _extractingService;
 
-    private readonly Queue<ILogEntry> pendingAdditions = new Queue<ILogEntry>();
+    private readonly Queue<ILogEntry> _pendingAdditions = new Queue<ILogEntry>();
 
     private readonly LogMessagesControl presenter;
 
@@ -66,19 +66,19 @@ public class LogMessages : ViewModelBase, ILogViewer
         dt.Tick += UpdateTick;
         dt.Start();
 
-        filteringService = ServiceLocator.Instance.Get<IFilteringService<IFilter>>();
-        if (filteringService != null)
+        _filteringService = ServiceLocator.Instance.Get<IFilteringService<IFilter>>();
+        if (_filteringService != null)
         {
-            if (filteringService is INotifyPropertyChanged notify)
+            if (_filteringService is INotifyPropertyChanged notify)
             {
                 notify.PropertyChanged += (sender, e) => ApplyFiltering();
             }
         }
 
-        extractingService = ServiceLocator.Instance.Get<IExtractingService<IExtractor>>();
-        if (extractingService != null)
+        _extractingService = ServiceLocator.Instance.Get<IExtractingService<IExtractor>>();
+        if (_extractingService != null)
         {
-            if (extractingService is INotifyPropertyChanged notify)
+            if (_extractingService is INotifyPropertyChanged notify)
             {
                 notify.PropertyChanged += (sender, e) => ApplyExtracting();
             }
@@ -252,36 +252,21 @@ public class LogMessages : ViewModelBase, ILogViewer
             // therefore anything in the pendingQueue is unneeded as it
             // will already be in the complete collection and the incomplete
             // filtered copy of that list is going to be disposed.
-            lock (pendingAdditions)
+            lock (_pendingAdditions)
             {
-                pendingAdditions.Clear();
+                _pendingAdditions.Clear();
             }
 
             rebuildList = true;
         }
     }
 
-    /// <summary>
-    /// Append new log entry, as long as it wouldn't normally have been filtered.
-    /// </summary>
-    /// <param name="entry">Entry to add.</param>
-    private void AddIfPassesFilters(ILogEntry entry)
+    private bool PassesFilters(ILogEntry entry)
     {
-        lock (Messages)
-        {
-            // If no filtering service or no extracting service, then assume it passes.
-            if (filteringService == null || extractingService == null)
-            {
-                Messages.Add(entry);
-            }
-            else
-            {
-                if (!filteringService.IsFiltered(entry) && !extractingService.IsFiltered(entry))
-                {
-                    Messages.Add(entry);
-                }
-            }
-        }
+        if (_filteringService == null || _extractingService == null)
+            return true;
+
+        return _filteringService.IsMatch(entry) && !_extractingService.IsFiltered(entry);
     }
 
     private void ApplyExtracting()
@@ -294,9 +279,9 @@ public class LogMessages : ViewModelBase, ILogViewer
             // therefore anything in the pendingQueue is unneeded as it
             // will already be in the complete collection and the incomplete
             // filtered copy of that list is going to be disposed.
-            lock (pendingAdditions)
+            lock (_pendingAdditions)
             {
-                pendingAdditions.Clear();
+                _pendingAdditions.Clear();
             }
 
             rebuildList = true;
@@ -323,9 +308,9 @@ public class LogMessages : ViewModelBase, ILogViewer
             // If rebuilding the list, any additions to the pendingAdditions
             // made since the "rebuildList" variable was set to true will
             // not be needed, throw them away to avoid duplication.
-            lock (pendingAdditions)
+            lock (_pendingAdditions)
             {
-                pendingAdditions.Clear();
+                _pendingAdditions.Clear();
             }
 
             lock (Messages)
@@ -341,7 +326,8 @@ public class LogMessages : ViewModelBase, ILogViewer
 
                     foreach (var entry in Logger.Entries)
                     {
-                        AddIfPassesFilters(entry);
+                        if (PassesFilters(entry))
+                            Messages.Add(entry);
                     }
                 }
             }
@@ -352,16 +338,17 @@ public class LogMessages : ViewModelBase, ILogViewer
 
             rebuildList = clearPending = false;
         }
-        else if (pendingAdditions.Count > 0)
+        else if (_pendingAdditions.Count > 0)
         {
-            lock (pendingAdditions)
+            lock (_pendingAdditions)
             {
                 lock (Messages)
                 {
-                    while (pendingAdditions.Count > 0)
+                    while (_pendingAdditions.Count > 0)
                     {
-                        var entry = pendingAdditions.Dequeue();
-                        AddIfPassesFilters(entry);
+                        var entry = _pendingAdditions.Dequeue();
+                        if (PassesFilters(entry))
+                            Messages.Add(entry);
                     }
 
                     if (Preferences?.LimitMessages ?? false)
@@ -403,11 +390,11 @@ public class LogMessages : ViewModelBase, ILogViewer
         {
             lock (Logger.NewEntries)
             {
-                lock (pendingAdditions)
+                lock (_pendingAdditions)
                 {
                     foreach (var entry in Logger.NewEntries)
                     {
-                        pendingAdditions.Enqueue(entry);
+                        _pendingAdditions.Enqueue(entry);
                     }
                 }
             }

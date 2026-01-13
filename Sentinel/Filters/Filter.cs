@@ -25,7 +25,7 @@ public class Filter : ViewModelBase, IFilter
 
     private MatchMode mode = MatchMode.Exact;
 
-    private Regex regex;
+    private Regex _regex;
 
     public Filter()
     {
@@ -35,7 +35,7 @@ public class Filter : ViewModelBase, IFilter
             {
                 if (Mode == MatchMode.RegularExpression && Pattern != null)
                 {
-                    regex = new Regex(Pattern);
+                    _regex = new Regex(Pattern);
                 }
 
                 OnPropertyChanged(nameof(Description));
@@ -48,7 +48,7 @@ public class Filter : ViewModelBase, IFilter
         Name = name;
         Pattern = pattern;
         Field = field;
-        regex = new Regex(pattern);
+        _regex = new Regex(pattern);
 
         PropertyChanged += (sender, e) =>
         {
@@ -56,7 +56,7 @@ public class Filter : ViewModelBase, IFilter
             {
                 if (Mode == MatchMode.RegularExpression && Pattern != null)
                 {
-                    regex = new Regex(Pattern);
+                    _regex = new Regex(Pattern);
                 }
 
                 OnPropertyChanged(nameof(Description));
@@ -156,19 +156,13 @@ public class Filter : ViewModelBase, IFilter
     {
         get
         {
-            var modeDescription = "Exact";
-            switch (Mode)
+            var modeDescription = Mode switch
             {
-                case MatchMode.RegularExpression:
-                    modeDescription = "RegEx";
-                    break;
-                case MatchMode.Contains:
-                    modeDescription = "Case sensitive";
-                    break;
-                case MatchMode.CaseInsensitive:
-                    modeDescription = "Case insensitive";
-                    break;
-            }
+                MatchMode.RegularExpression => "RegEx",
+                MatchMode.Contains => "Case sensitive",
+                MatchMode.CaseInsensitive => "Case insensitive",
+                _ => "Exact"
+            };
 
             return $"{modeDescription} match of {Pattern} in the {Field} field";
         }
@@ -176,59 +170,21 @@ public class Filter : ViewModelBase, IFilter
 
     public bool IsMatch(ILogEntry logEntry)
     {
-        logEntry = logEntry ?? throw new ArgumentNullException(nameof(logEntry));
+        ArgumentNullException.ThrowIfNull(logEntry);
 
         if (string.IsNullOrWhiteSpace(Pattern))
-        {
-            return false;
-        }
+            return true;
 
-        string target;
+        var target = logEntry.GetField(Field);
 
-        switch (Field)
+        return Mode switch
         {
-            case LogEntryFields.None:
-                target = string.Empty;
-                break;
-            case LogEntryFields.Type:
-                target = logEntry.Type;
-                break;
-            case LogEntryFields.System:
-                target = logEntry.System;
-                break;
-            case LogEntryFields.Classification:
-                target = string.Empty;
-                break;
-            case LogEntryFields.Thread:
-                target = logEntry.Thread;
-                break;
-            case LogEntryFields.Source:
-                target = logEntry.Source;
-                break;
-            case LogEntryFields.Description:
-                target = logEntry.Description;
-                break;
-            case LogEntryFields.Host:
-                target = string.Empty;
-                break;
-            default:
-                target = string.Empty;
-                break;
-        }
-
-        switch (Mode)
-        {
-            case MatchMode.Exact:
-                return string.Equals(target, Pattern, StringComparison.OrdinalIgnoreCase);
-            case MatchMode.Contains:
-                return target.Contains(Pattern);
-            case MatchMode.CaseInsensitive:
-                return target.ToLower().Contains(Pattern.ToLower());
-            case MatchMode.RegularExpression:
-                return regex != null && regex.IsMatch(target);
-            default:
-                return false;
-        }
+            MatchMode.Exact => string.Equals(target, Pattern, StringComparison.OrdinalIgnoreCase),
+            MatchMode.Contains => target.Contains(Pattern),
+            MatchMode.CaseInsensitive => target.Contains(Pattern, StringComparison.CurrentCultureIgnoreCase),
+            MatchMode.RegularExpression => _regex != null && _regex.IsMatch(target),
+            _ => true,
+        };
     }
 
 #if DEBUG

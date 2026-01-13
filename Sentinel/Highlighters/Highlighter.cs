@@ -22,7 +22,7 @@ public class Highlighter : ViewModelBase, IHighlighter
 
     private string _pattern;
 
-    private Regex _regex;
+    private Regex? _regex;
 
     private Func<string, string, bool> _matcher;
 
@@ -81,11 +81,13 @@ public class Highlighter : ViewModelBase, IHighlighter
             _matcher = (target, pattern) => string.Equals(target, pattern, StringComparison.OrdinalIgnoreCase);
         if (_mode == MatchMode.Contains)
             _matcher = (target, pattern) =>  target.Contains(Pattern,  StringComparison.OrdinalIgnoreCase);
-        if (_mode == MatchMode.RegularExpression)
-            if (_regex != null)
-                _matcher = (target, pattern) => _regex.IsMatch(target);
-            else
-                _matcher = (target, pattern) => false;
+        if (_mode != MatchMode.RegularExpression) 
+            return;
+        
+        if (_regex != null)
+            _matcher = (target, pattern) => _regex.IsMatch(target);
+        else
+            _matcher = (target, pattern) => false;
     }
 
     public string Name
@@ -201,7 +203,7 @@ public class Highlighter : ViewModelBase, IHighlighter
         }
     }
 
-    public bool IsMatch(ILogEntry logEntry)
+    public bool IsMatch(ILogEntry? logEntry)
     {
         Debug.Assert(logEntry != null, "logEntry can not be null.");
 
@@ -211,44 +213,10 @@ public class Highlighter : ViewModelBase, IHighlighter
         }
 
         if (string.IsNullOrWhiteSpace(Pattern))
-        {
             return false;
-        }
 
-        var target = GetTarget(logEntry);
+        var target = logEntry.GetField(Field);
 
         return _matcher(target, _pattern);
-    }
-
-    private string GetTarget(ILogEntry logEntry)
-    {
-        string target;
-
-        switch (Field)
-        {
-            case LogEntryFields.Type:
-                target = logEntry.Type;
-                break;
-            case LogEntryFields.System:
-                target = logEntry.System;
-                break;
-            case LogEntryFields.Thread:
-                target = logEntry.Thread;
-                break;
-            case LogEntryFields.Source:
-                target = logEntry.Source;
-                break;
-            case LogEntryFields.Description:
-                target = logEntry.Description;
-                break;
-            ////case LogEntryField.Classification:
-            ////case LogEntryField.None:
-            ////case LogEntryField.Host:
-            default:
-                target = string.Empty;
-                break;
-        }
-
-        return target;
     }
 }

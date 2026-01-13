@@ -23,6 +23,7 @@ using Sentinel.Logs.Gui;
 using Sentinel.Logs.Interfaces;
 using Sentinel.Preferences;
 using Sentinel.Providers;
+using Sentinel.Providers.DbMonitor;
 using Sentinel.Providers.FileMonitor;
 using Sentinel.Providers.Interfaces;
 using Sentinel.Providers.Log4Net;
@@ -210,9 +211,7 @@ public class SessionManager : ISessionManager
     private void LoadServiceLocator(IEnumerable<string> jsonObjectStrings)
     {
         if (jsonObjectStrings == null)
-        {
             return;
-        }
 
         var locator = ServiceLocator.Instance;
         var pendingProviderRecords = new List<PendingProviderRecord>();
@@ -228,11 +227,11 @@ public class SessionManager : ISessionManager
                 {
                     locator.Register<IUserPreferences>(JsonHelper.DeserializeFromString<UserPreferences>(objString));
                 }
-                else if (typeString.Contains(typeof(SearchFilter).Name))
+                else if (typeString.Contains(nameof(SearchFilter)))
                 {
                     locator.Register<ISearchFilter>(JsonHelper.DeserializeFromString<SearchFilter>(objString));
                 }
-                else if (typeString.Contains(typeof(SearchExtractor).Name))
+                else if (typeString.Contains(nameof(SearchExtractor)))
                 {
                     locator.Register<ISearchExtractor>(JsonHelper.DeserializeFromString<SearchExtractor>(objString));
                 }
@@ -251,7 +250,7 @@ public class SessionManager : ISessionManager
                     locator.Register<IHighlightingService<IHighlighter>>(
                         JsonHelper.DeserializeFromString<HighlightingService<IHighlighter>>(objString));
                 }
-                else if (typeString.Contains(typeof(SearchHighlighter).Name))
+                else if (typeString.Contains(nameof(SearchHighlighter)))
                 {
                     locator.Register<ISearchHighlighter>(
                         JsonHelper.DeserializeFromString<SearchHighlighter>(objString));
@@ -261,12 +260,12 @@ public class SessionManager : ISessionManager
                     locator.Register<IClassifyingService<IClassifier>>(
                         JsonHelper.DeserializeFromString<ClassifyingService<IClassifier>>(objString));
                 }
-                else if (typeString.Contains(typeof(TypeToImageService).Name))
+                else if (typeString.Contains(nameof(TypeToImageService)))
                 {
                     locator.Register<ITypeImageService>(
                         JsonHelper.DeserializeFromString<TypeToImageService>(objString));
                 }
-                else if (typeString.Contains(typeof(SessionManager).Name))
+                else if (typeString.Contains(nameof(SessionManager)))
                 {
                     Name = deserializedObj["Name"].ToString();
 
@@ -287,7 +286,7 @@ public class SessionManager : ISessionManager
                         var settings = providerSetting.ToString();
 
                         var name = providerSetting["$type"].ToString();
-                        if (name.Contains(typeof(NetworkSettings).Name))
+                        if (name.Contains(nameof(NetworkSettings)))
                         {
                             var thisSetting = JsonHelper.DeserializeFromString<NetworkSettings>(settings);
                             pendingProviderRecords.Add(new PendingProviderRecord
@@ -296,7 +295,7 @@ public class SessionManager : ISessionManager
                                 Settings = thisSetting,
                             });
                         }
-                        else if (name.Contains(typeof(UdpAppenderSettings).Name))
+                        else if (name.Contains(nameof(UdpAppenderSettings)))
                         {
                             var thisSetting = JsonHelper.DeserializeFromString<UdpAppenderSettings>(settings);
                             pendingProviderRecords.Add(new PendingProviderRecord
@@ -305,10 +304,16 @@ public class SessionManager : ISessionManager
                                 Settings = thisSetting,
                             });
                         }
-                        else if (name.Contains(typeof(FileMonitoringProviderSettings).Name))
+                        else if (name.Contains(nameof(FileMonitoringProviderSettings)))
                         {
                             var thisSetting =
                                 JsonHelper.DeserializeFromString<FileMonitoringProviderSettings>(settings);
+                            pendingProviderRecords.Add(new PendingProviderRecord { Info = thisSetting.Info, Settings = thisSetting, });
+                        }
+                        else if (name.Contains(nameof(DbMonitoringProviderSettings)))
+                        {
+                            var thisSetting =
+                                JsonHelper.DeserializeFromString<DbMonitoringProviderSettings>(settings);
                             pendingProviderRecords.Add(new PendingProviderRecord { Info = thisSetting.Info, Settings = thisSetting, });
                         }
                         else

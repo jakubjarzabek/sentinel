@@ -15,7 +15,7 @@ public class CollectionChangeHelper<T>
 
     public string ManagerName { get; set; }
 
-    public void AttachDetach(object sender, NotifyCollectionChangedEventArgs e)
+    public void AttachDetach(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.Action == NotifyCollectionChangedAction.Add)
         {

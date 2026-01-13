@@ -18,13 +18,13 @@ using WpfExtras;
 public class FilteringService<T> : ViewModelBase, IFilteringService<T>, IDefaultInitialisation
     where T : class, IFilter
 {
-    private readonly CollectionChangeHelper<T> collectionHelper = new CollectionChangeHelper<T>();
+    private readonly CollectionChangeHelper<T> _collectionHelper = new CollectionChangeHelper<T>();
 
-    private readonly IAddFilterService addFilterService = new AddFilter();
+    private readonly IAddFilterService _addFilterService = new AddFilter();
 
-    private readonly IEditFilterService editFilterService = new EditFilter();
+    private readonly IEditFilterService _editFilterService = new EditFilter();
 
-    private readonly IRemoveFilterService removeFilterService = new RemoveFilter();
+    private readonly IRemoveFilterService _removeFilterService = new RemoveFilter();
 
     private int selectedIndex = -1;
 
@@ -38,13 +38,13 @@ public class FilteringService<T> : ViewModelBase, IFilteringService<T>, IDefault
         SearchFilters = new ObservableCollection<T>();
 
         // Register self as an observer of the collection.
-        collectionHelper.OnPropertyChanged += CustomFilterPropertyChanged;
+        _collectionHelper.OnPropertyChanged += CustomFilterPropertyChanged;
 
-        collectionHelper.ManagerName = "FilteringService";
-        collectionHelper.NameLookup += e => e.Name;
+        _collectionHelper.ManagerName = "FilteringService";
+        _collectionHelper.NameLookup += e => e.Name;
 
-        Filters.CollectionChanged += collectionHelper.AttachDetach;
-        SearchFilters.CollectionChanged += collectionHelper.AttachDetach;
+        Filters.CollectionChanged += _collectionHelper.AttachDetach;
+        SearchFilters.CollectionChanged += _collectionHelper.AttachDetach;
 
         var searchFilter = ServiceLocator.Instance.Get<ISearchFilter>();
 
@@ -66,10 +66,7 @@ public class FilteringService<T> : ViewModelBase, IFilteringService<T>, IDefault
 
     public int SelectedIndex
     {
-        get
-        {
-            return selectedIndex;
-        }
+        get => selectedIndex;
 
         set
         {
@@ -96,15 +93,15 @@ public class FilteringService<T> : ViewModelBase, IFilteringService<T>, IDefault
         Filters.Add(new StandardFilter("Fatal", LogEntryFields.Type, "FATAL") as T);
     }
 
-    public bool IsFiltered(ILogEntry entry)
+    public bool IsMatch(ILogEntry entry)
     {
-        return Filters.Any(filter => filter.Enabled && filter.IsMatch(entry)) ||
-               SearchFilters.Any(filter => filter.Enabled && filter.IsMatch(entry));
+        var activeFilters = Filters.Concat(SearchFilters).Where(f => f.Enabled).ToList();
+        return activeFilters.Count == 0 || activeFilters.Any(filter => filter.IsMatch(entry));
     }
 
     private void AddFilter(object obj)
     {
-        addFilterService.Add();
+        _addFilterService.Add();
     }
 
     private void CustomFilterPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -124,13 +121,13 @@ public class FilteringService<T> : ViewModelBase, IFilteringService<T>, IDefault
         var filter = Filters.ElementAt(SelectedIndex);
         if (filter != null)
         {
-            editFilterService.Edit(filter);
+            _editFilterService.Edit(filter);
         }
     }
 
     private void RemoveFilter(object obj)
     {
         var filter = Filters.ElementAt(SelectedIndex);
-        removeFilterService.Remove(filter);
+        _removeFilterService.Remove(filter);
     }
 }

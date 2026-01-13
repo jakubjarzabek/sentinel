@@ -12,5 +12,5 @@ public interface IFilteringService<T>
 
     ObservableCollection<T> SearchFilters { get; set; }
 
-    bool IsFiltered(ILogEntry entry);
+    bool IsMatch(ILogEntry entry);
 }

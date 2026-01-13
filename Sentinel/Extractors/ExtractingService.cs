@@ -18,33 +18,34 @@ using WpfExtras;
 public class ExtractingService<T> : ViewModelBase, IExtractingService<T>, IDefaultInitialisation
     where T : class, IExtractor
 {
-    private readonly CollectionChangeHelper<T> collectionHelper = new CollectionChangeHelper<T>();
+    private readonly CollectionChangeHelper<T> _collectionHelper = new CollectionChangeHelper<T>();
 
-    private readonly IAddExtractorService addExtractorService = new AddExtractor();
+    private readonly AddExtractor _addExtractorService = new AddExtractor();
 
-    private readonly IEditExtractorService editExtractorService = new EditExtractor();
+    private readonly EditExtractor _editExtractorService = new EditExtractor();
 
-    private readonly IRemoveExtractorService removeExtractorService = new RemoveExtractor();
+    private readonly RemoveExtractor _removeExtractorService = new RemoveExtractor();
 
-    private int selectedIndex = -1;
+    private int _selectedIndex = -1;
+
+    public ObservableCollection<T> Extractors { get; set; } = [];
+
+    public ObservableCollection<T> SearchExtractors { get; set; } = [];
 
     public ExtractingService()
     {
         Add = new DelegateCommand(AddExtractor);
-        Edit = new DelegateCommand(EditExtractor, e => selectedIndex != -1);
-        Remove = new DelegateCommand(RemoveExtractor, e => selectedIndex != -1);
-
-        Extractors = new ObservableCollection<T>();
-        SearchExtractors = new ObservableCollection<T>();
+        Edit = new DelegateCommand(EditExtractor, e => _selectedIndex != -1);
+        Remove = new DelegateCommand(RemoveExtractor, e => _selectedIndex != -1);
 
         // Register self as an observer of the collection.
-        collectionHelper.OnPropertyChanged += CustomExtractorPropertyChanged;
+        _collectionHelper.OnPropertyChanged += CustomExtractorPropertyChanged;
 
-        collectionHelper.ManagerName = "ExtractingService";
-        collectionHelper.NameLookup += e => e.Name;
+        _collectionHelper.ManagerName = "ExtractingService";
+        _collectionHelper.NameLookup += e => e.Name;
 
-        Extractors.CollectionChanged += collectionHelper.AttachDetach;
-        SearchExtractors.CollectionChanged += collectionHelper.AttachDetach;
+        Extractors.CollectionChanged += _collectionHelper.AttachDetach;
+        SearchExtractors.CollectionChanged += _collectionHelper.AttachDetach;
 
         var searchExtractor = ServiceLocator.Instance.Get<ISearchExtractor>();
 
@@ -72,22 +73,18 @@ public class ExtractingService<T> : ViewModelBase, IExtractingService<T>, IDefau
     {
         get
         {
-            return selectedIndex;
+            return _selectedIndex;
         }
 
         set
         {
-            if (value != selectedIndex)
+            if (value != _selectedIndex)
             {
-                selectedIndex = value;
+                _selectedIndex = value;
                 OnPropertyChanged(nameof(SelectedIndex));
             }
         }
     }
-
-    public ObservableCollection<T> Extractors { get; set; }
-
-    public ObservableCollection<T> SearchExtractors { get; set; }
 
     public void Initialise()
     {
@@ -102,13 +99,12 @@ public class ExtractingService<T> : ViewModelBase, IExtractingService<T>, IDefau
 
     private void AddExtractor(object obj)
     {
-        addExtractorService.Add();
+        _addExtractorService.Add();
     }
 
-    private void CustomExtractorPropertyChanged(object sender, PropertyChangedEventArgs e)
+    private void CustomExtractorPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var extractor = sender as Extractor;
-        if (extractor != null)
+        if (sender is Extractor extractor)
         {
             Trace.WriteLine(
                 $"ExtractingService saw some activity on {extractor.Name} (IsEnabled = {extractor.Enabled})");
@@ -122,13 +118,13 @@ public class ExtractingService<T> : ViewModelBase, IExtractingService<T>, IDefau
         var extractor = Extractors.ElementAt(SelectedIndex);
         if (extractor != null)
         {
-            editExtractorService.Edit(extractor);
+            _editExtractorService.Edit(extractor);
         }
     }
 
     private void RemoveExtractor(object obj)
     {
         var extractor = Extractors.ElementAt(SelectedIndex);
-        removeExtractorService.Remove(extractor);
+        _removeExtractorService.Remove(extractor);
     }
 }

@@ -62,7 +62,7 @@ public class ServiceLocator
         "Microsoft.Design",
         "CA1004:GenericMethodsShouldProvideTypeParameter",
         Justification = "This approach has been chosen as the intended usage style.")]
-    public T Get<T>()
+    public T? Get<T>()
     {
         if (services.ContainsKey(typeof(T)))
         {
@@ -76,7 +76,7 @@ public class ServiceLocator
             MessageBox.Show(errorMessage, "Service location error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        return default(T);
+        return default;
     }
 
     [SuppressMessage(
